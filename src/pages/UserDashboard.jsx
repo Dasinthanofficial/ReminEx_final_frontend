@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { FiPackage, FiAlertTriangle, FiDollarSign, FiPlus, FiChevronRight } from 'react-icons/fi';
+import { FiPackage, FiAlertTriangle, FiDollarSign, FiPlus, FiChevronRight, FiShield } from 'react-icons/fi';
 import { format } from 'date-fns';
 import { productService } from '../services/productService';
 import { useAuth } from '../context/AuthContext';
@@ -14,12 +14,102 @@ const UserDashboard = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
+  // Only fetch products for non-admin users
   const { data: products, isLoading } = useQuery({
     queryKey: ['products'],
     queryFn: productService.getProducts,
+    enabled: user?.role !== 'admin', // Don't fetch if admin
   });
 
-  // Calculate statistics
+  // Admin view
+  if (user?.role === 'admin') {
+    return (
+      <div className="space-y-8">
+        {/* Welcome Section */}
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl p-8">
+          <div className="flex items-center mb-4">
+            <FiShield className="text-4xl mr-4" />
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+              <p className="text-blue-100">Welcome back, {user?.name}!</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Admin Info Card */}
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Administrator Access</h2>
+          
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg mb-6">
+            <h3 className="font-semibold text-blue-900 mb-3">Admin Capabilities:</h3>
+            <ul className="space-y-2 text-blue-800">
+              <li className="flex items-center">
+                <span className="mr-2">✓</span>
+                View system statistics and analytics
+              </li>
+              <li className="flex items-center">
+                <span className="mr-2">✓</span>
+                Manage subscription plans (prices, features)
+              </li>
+              <li className="flex items-center">
+                <span className="mr-2">✓</span>
+                Add and manage advertisements
+              </li>
+              <li className="flex items-center">
+                <span className="mr-2">✓</span>
+                Monitor user activity and revenue
+              </li>
+            </ul>
+          </div>
+
+          <div className="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg mb-6">
+            <h3 className="font-semibold text-yellow-900 mb-3">Access Restrictions:</h3>
+            <ul className="space-y-2 text-yellow-800">
+              <li className="flex items-center">
+                <span className="mr-2">✗</span>
+                Admins cannot add or manage products
+              </li>
+              <li className="flex items-center">
+                <span className="mr-2">✗</span>
+                Product tracking is only for regular users
+              </li>
+              <li className="flex items-center">
+                <span className="mr-2">✗</span>
+                AI recipes and reports are user features
+              </li>
+            </ul>
+          </div>
+
+          <div className="flex gap-4">
+            <Link
+              to="/admin"
+              className="flex-1 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition text-center font-semibold"
+            >
+              Go to Admin Panel
+            </Link>
+            <Link
+              to="/admin/plans"
+              className="flex-1 bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition text-center font-semibold"
+            >
+              Manage Plans
+            </Link>
+            <Link
+              to="/admin/ads"
+              className="flex-1 bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition text-center font-semibold"
+            >
+              Manage Ads
+            </Link>
+          </div>
+
+          <p className="text-sm text-gray-500 text-center mt-6">
+            Note: To use product tracking features, create a regular user account.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate statistics for regular users
   const stats = {
     totalProducts: products?.length || 0,
     expiringThisWeek: products?.filter(p => {

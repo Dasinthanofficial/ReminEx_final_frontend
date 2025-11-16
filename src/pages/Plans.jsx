@@ -77,23 +77,25 @@ const Plans = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 bg-[#122017] p-10">
       <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Choose Your Plan</h1>
-        <p className="text-xl text-gray-600">Start free, upgrade when you need more</p>
+        <h1 className="text-4xl text-white font-bold mb-4">Choose Your Plan</h1>
+        <p className="text-xl text-white">Start free, upgrade when you need more</p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto ">
         {plans?.map((plan) => {
           const isCurrentPlan = user?.plan === plan.name;
           const isPro = plan.name === 'Yearly';
           
           return (
-            <div
+            <div 
               key={plan._id}
-              className={`relative bg-white rounded-2xl shadow-xl p-8 ${
+              className={`relative bg-white rounded-2xl shadow-xl p-8 bg-white/10 backdrop-blur-md border border-white/30 rounded-xl   text-white rounded-2xl p-12${
                 isPro ? 'ring-2 ring-primary-500 transform scale-105' : ''
+              
               }`}
+              
             >
               {isPro && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -103,16 +105,16 @@ const Plans = () => {
                 </div>
               )}
 
-              <div className="text-center mb-8">
+              <div className="text-center mb-8 ">
                 <h2 className="text-2xl font-bold mb-2">{plan.name}</h2>
                 <div className="text-4xl font-bold mb-4">
                   ${plan.price}
-                  <span className="text-lg text-gray-500">
+                  <span className="text-lg text-white">
                     /{plan.name === 'Yearly' ? 'year' : 'month'}
                   </span>
                 </div>
                 {plan.description && (
-                  <p className="text-gray-600">{plan.description}</p>
+                  <p className="text-white">{plan.description}</p>
                 )}
               </div>
 

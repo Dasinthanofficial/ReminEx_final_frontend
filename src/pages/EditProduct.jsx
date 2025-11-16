@@ -1,16 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { FiSave, FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { productService } from '../services/productService';
+import { useAuth } from '../context/AuthContext';
 
 const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [imagePreview, setImagePreview] = useState('');
+
+  // Admin restriction check
+  if (user?.role === 'admin') {
+    return (
+      <div className="max-w-2xl mx-auto mt-12">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="bg-red-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <FiX className="text-red-600 text-4xl" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Access Denied</h2>
+          <p className="text-gray-600 mb-6">
+            Admins cannot edit products.
+          </p>
+          <Link
+            to="/admin"
+            className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition font-semibold inline-block"
+          >
+            Go to Admin Panel
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', id],

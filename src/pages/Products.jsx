@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiFilter, FiLock } from 'react-icons/fi';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { productService } from '../services/productService';
@@ -12,6 +12,52 @@ const Products = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
+
+  // Admin restriction check
+  if (user?.role === 'admin') {
+    return (
+      <div className="max-w-2xl mx-auto mt-12">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="bg-red-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <FiLock className="text-red-600 text-4xl" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Admin Access Restricted</h2>
+          <p className="text-gray-600 mb-6">
+            Administrators cannot add or manage products. This feature is exclusively for regular users 
+            to track their personal inventory.
+          </p>
+          
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+            <h3 className="font-semibold text-yellow-900 mb-3">Why this restriction?</h3>
+            <ul className="text-left text-yellow-800 space-y-2 text-sm">
+              <li>• Products are personal inventory items for individual users</li>
+              <li>• Admins manage system-wide settings, not user data</li>
+              <li>• This ensures data privacy and proper access control</li>
+            </ul>
+          </div>
+
+          <div className="flex gap-4 justify-center">
+            <Link
+              to="/admin"
+              className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition font-semibold"
+            >
+              Go to Admin Panel
+            </Link>
+            <Link
+              to="/"
+              className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-semibold"
+            >
+              Back to Home
+            </Link>
+          </div>
+
+          <p className="text-sm text-gray-500 mt-6">
+            To use product tracking, create a regular user account.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['products'],

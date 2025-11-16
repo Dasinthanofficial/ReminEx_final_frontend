@@ -1,46 +1,26 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FiTarget, FiHeart, FiUsers, FiAward } from 'react-icons/fi';
+import { MdOutlineArtTrack } from "react-icons/md";
+import { IoMdAddCircleOutline } from "react-icons/io";
+import { HiOutlineSaveAs } from "react-icons/hi";
 
 const About = () => {
-  const values = [
-    {
-      icon: <FiTarget />,
-      title: 'Our Mission',
-      description: 'To help households worldwide reduce food waste and save money through intelligent tracking.',
-    },
-    {
-      icon: <FiHeart />,
-      title: 'Our Values',
-      description: 'Sustainability, innovation, and user-centric design drive everything we do.',
-    },
-    {
-      icon: <FiUsers />,
-      title: 'Our Community',
-      description: 'Join thousands of conscious consumers making a positive environmental impact.',
-    },
-    {
-      icon: <FiAward />,
-      title: 'Our Achievement',
-      description: 'Helped save over $1M worth of food from being wasted since our launch.',
-    },
-  ];
-
+  
 
 
    const mission = [
     {
-      icon: <FiTarget />,
+      icon: <IoMdAddCircleOutline />,
       title: 'Add',
       description: ' Easily add your food items, including expiry dates, categories, and price.',
     },
     {
-      icon: <FiHeart />,
+      icon: < MdOutlineArtTrack />,
       title: 'Track',
       description: 'Monitor your food inventory and receive notifications before items expire.',
     },
     {
-      icon: <FiUsers />,
+      icon: <HiOutlineSaveAs />,
       title: 'Save',
       description: 'Save money by reducing food waste and making informed decisions about your grocery shopping.',
     }
@@ -66,21 +46,7 @@ const About = () => {
 
     
      <div></div>
-      <div className="grid md:grid-cols-4 gap-8 ">
-        {values.map((value, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-[#17231B] rounded-xl border-[#9EB7A8] border shadow-lg p-6 bg-[#17231B]"
-          >
-            <div className="text-primary-500 text-3xl mb-4">{value.icon}</div>
-            <h3 className="text-xl text-[#9EB7A8]  font-bold mb-2">{value.title}</h3>
-            <p className="text-[#9EB7A8]">{value.description}</p>
-          </motion.div>
-        ))}
-      </div>
+      
 
       <div className=" text-white rounded-2xl p-12 text-center mt-[300px]">
         <h2 className="text-3xl font-bold mb-4">Our Story</h2>
@@ -99,10 +65,10 @@ const About = () => {
             initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="bg-[#17231B] rounded-xl border-[#9EB7A8] border shadow-lg p-6 bg-[#17231B]"
+            className="p-6 rounded-xl shadow-lg  bg-white/10 backdrop-blur-md border border-white/30 rounded-xl p-6 hover:shadow-2xl"
           >
-            <div className="text-primary-500 text-3xl mb-4">{mission.icon}</div>
-            <h3 className="text-xl text-[#9EB7A8]  font-bold mb-2">{mission.title}</h3>
+            <div className="text-[#38E07B]  text-3xl mb-4">{mission.icon}</div>
+            <h3 className="text-xl text-white  font-bold mb-2">{mission.title}</h3>
             <p className="text-[#9EB7A8]">{mission.description}</p>
           </motion.div>
         ))}
