@@ -8,7 +8,7 @@ const PaymentSuccess = () => {
   const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
-    // Trigger confetti animation
+    
     confetti({
       particleCount: 100,
       spread: 70,

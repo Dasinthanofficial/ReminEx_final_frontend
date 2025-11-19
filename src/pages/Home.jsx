@@ -53,7 +53,7 @@ const Home = () => {
         <div className='text-center mb-[60px]'>
         <Link
           to="/register"
-          className="bg-[#38E07B] text-black px-8 py-3 rounded-lg text-lg  font-semibold hover:from-primary-600 hover:to-primary-700 transition inline-block"
+          className="bg-[#38E07B] text-black px-8 py-3 rounded-lg text-lg  font-semibold hover:bg-[#FFA500] transition inline-block"
         >
           Start Tracking Now
         </Link>
@@ -86,7 +86,7 @@ const Home = () => {
       
         <Link
           to="/register"
-          className="bg-[#38E07B]  text-black px-8 py-3 rounded-lg text-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition inline-block"
+          className="bg-[#38E07B]  text-black px-8 py-3 rounded-lg text-lg font-semibold hover:bg-[#FFA500] transition inline-block"
         >
           Start Your Free Account
         </Link>

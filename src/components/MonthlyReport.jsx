@@ -7,7 +7,10 @@ import api from '../services/api';
 const MonthlyReport = ({ month, year }) => {
   const { data: report, isLoading } = useQuery({
     queryKey: ['monthlyReport', month, year],
-    queryFn: () => api.get(`/user/reports?month=${month}&year=${year}`),
+   queryFn: async () => {
+  const response = await api.get(`/user/reports?month=${month}&year=${year}`);
+  return response;
+}
   });
 
   if (isLoading) {

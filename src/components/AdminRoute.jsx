@@ -1,10 +1,12 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const AdminRoute = () => {
   const { isAuthenticated, isAdmin, loading } = useAuth();
+  const location = useLocation();
 
+  // Still checking auth state from context
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -13,11 +15,18 @@ const AdminRoute = () => {
     );
   }
 
+  // Not logged in → send to login, remember where user was going
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return isAdmin ? <Outlet /> : <Navigate to="/dashboard" />;
+  // Logged in but not admin → send to dashboard (or some 403 page)
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Logged in and admin → render child routes
+  return <Outlet />;
 };
 
 export default AdminRoute;

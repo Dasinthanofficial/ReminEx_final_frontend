@@ -1,15 +1,20 @@
-import api from './api';
+// src/services/productService.js
+import api from "./api";
 
 export const productService = {
-  getProducts: () => api.get('/products'),
-  
+  getProducts: () => api.get("/products"),
   getProduct: (id) => api.get(`/products/${id}`),
-  
-  addProduct: (productData) => api.post('/products', productData),
-  
-  updateProduct: (id, productData) => api.put(`/products/${id}`, productData),
-  
+
+  // ✅ Add product (handles FormData)
+  addProduct: (data) => api.post("/products", data, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }),
+
+  // ✅ Update product (handles FormData)
+  updateProduct: (id, data) => api.put(`/products/${id}`, data, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }),
+
   deleteProduct: (id) => api.delete(`/products/${id}`),
-  
-  getRecipeSuggestion: () => api.post('/products/recipe'),
+  getRecipeSuggestion: () => api.post("/products/recipe"),
 };

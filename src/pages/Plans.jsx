@@ -4,10 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiCheck, FiX } from 'react-icons/fi';
 import { paymentService } from '../services/paymentService';
 import { useAuth } from '../context/AuthContext';
-import { loadStripe } from '@stripe/stripe-js';
 import toast from 'react-hot-toast';
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const Plans = () => {
   const { user, isAuthenticated } = useAuth();
@@ -83,19 +80,17 @@ const Plans = () => {
         <p className="text-xl text-white">Start free, upgrade when you need more</p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto ">
+      <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
         {plans?.map((plan) => {
           const isCurrentPlan = user?.plan === plan.name;
           const isPro = plan.name === 'Yearly';
           
           return (
-            <div 
+            <div
               key={plan._id}
-              className={`relative bg-white rounded-2xl shadow-xl p-8 bg-white/10 backdrop-blur-md border border-white/30 rounded-xl   text-white rounded-2xl p-12${
+              className={`relative bg-white/10 backdrop-blur-md border border-white/30 rounded-2xl shadow-xl p-8 text-white ${
                 isPro ? 'ring-2 ring-primary-500 transform scale-105' : ''
-              
               }`}
-              
             >
               {isPro && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -105,7 +100,7 @@ const Plans = () => {
                 </div>
               )}
 
-              <div className="text-center mb-8 ">
+              <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold mb-2">{plan.name}</h2>
                 <div className="text-4xl font-bold mb-4">
                   ${plan.price}

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { 
-  FiUsers, 
-  FiDollarSign, 
-  FiTrendingUp, 
+import {
+  FiUsers,
+  FiDollarSign,
+  FiTrendingUp,
   FiPackage,
   FiSettings,
   FiImage,
@@ -118,12 +118,6 @@ const AdminDashboard = () => {
           >
             <FiSettings className="mr-2" /> Manage Plans
           </Link>
-          <Link
-            to="/admin/ads"
-            className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition flex items-center"
-          >
-            <FiImage className="mr-2" /> Manage Ads
-          </Link>
         </div>
       </div>
 
@@ -211,23 +205,23 @@ const AdminDashboard = () => {
       {/* Waste Analysis */}
       <div className="bg-white rounded-xl shadow-lg p-6">
         <h2 className="text-xl font-bold mb-6">Waste Analysis by Category</h2>
-        <Bar 
-          data={wasteAnalysisData} 
-          options={{ 
-            responsive: true, 
+        <Bar
+          data={wasteAnalysisData}
+          options={{
+            responsive: true,
             maintainAspectRatio: false,
             scales: {
               y: {
                 beginAtZero: true,
                 ticks: {
-                  callback: function(value) {
+                  callback: function (value) {
                     return '$' + value;
                   }
                 }
               }
             }
-          }} 
-          height={200} 
+          }}
+          height={200}
         />
       </div>
 
