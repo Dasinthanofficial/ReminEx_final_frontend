@@ -1,5 +1,6 @@
+// src/pages/Dashboard.jsx
 import { useEffect, useState } from "react";
-import api from "../api/api";
+import api from "../services/api"; // ✅ shared axios instance
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { ProductCard } from "../components/ProductCard";
 import { Modal } from "../components/Modal";
@@ -11,7 +12,7 @@ import { Link } from "react-router-dom";
 export const Dashboard = () => {
   const { user } = useAuth();
   const [userInfo, setUserInfo] = useState(null);
-  const [products, setProducts] = useState([]); // Initialize as empty array
+  const [products, setProducts] = useState([]);
   const [loadingUser, setLoadingUser] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -20,12 +21,13 @@ export const Dashboard = () => {
   // Load user profile
   const fetchUserData = async () => {
     try {
-      const { data } = await api.get("/api/user/dashboard");
+      // backend: /api/user/dashboard
+      const data = await api.get("/user/dashboard");
       setUserInfo(data);
     } catch (e) {
-      setToast({ 
-        message: e.response?.data?.message || "Failed to load user data", 
-        type: "error" 
+      setToast({
+        message: e.response?.data?.message || "Failed to load user data",
+        type: "error",
       });
       console.error(e);
     } finally {
@@ -37,15 +39,15 @@ export const Dashboard = () => {
   const loadProducts = async () => {
     setLoadingProducts(true);
     try {
-      const { data } = await api.get("/api/products");
-      // Ensure products is always an array
+      // backend: /api/products
+      const data = await api.get("/products");
       setProducts(Array.isArray(data) ? data : []);
     } catch (e) {
-      setToast({ 
-        message: e.response?.data?.message || "Failed to load products", 
-        type: "error" 
+      setToast({
+        message: e.response?.data?.message || "Failed to load products",
+        type: "error",
       });
-      setProducts([]); // Set to empty array on error
+      setProducts([]);
     } finally {
       setLoadingProducts(false);
     }
@@ -56,13 +58,13 @@ export const Dashboard = () => {
     loadProducts();
   }, []);
 
-  // Add product handler
+  // Add product handler – JSON body (no file upload here)
   const handleAddProduct = async (product) => {
     try {
-      await api.post("/api/products", product);
+      await api.post("/products", product);
       setToast({ message: "Product added!", type: "success" });
       setShowAddModal(false);
-      loadProducts(); // Refresh the product list
+      loadProducts();
     } catch (e) {
       setToast({
         message: e.response?.data?.message || "Failed to add product",
@@ -75,13 +77,13 @@ export const Dashboard = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this product?")) return;
     try {
-      await api.delete(`/api/products/${id}`);
+      await api.delete(`/products/${id}`);
       setToast({ message: "Product deleted", type: "success" });
-      loadProducts(); // Refresh the product list
+      loadProducts();
     } catch (e) {
-      setToast({ 
-        message: e.response?.data?.message || "Delete failed", 
-        type: "error" 
+      setToast({
+        message: e.response?.data?.message || "Delete failed",
+        type: "error",
       });
     }
   };
@@ -90,6 +92,7 @@ export const Dashboard = () => {
     return <LoadingSpinner />;
   }
 
+  // Currently unused, you can remove if not needed
   const isPremium = user?.plan === "Monthly" || user?.plan === "Yearly";
 
   return (
@@ -109,12 +112,13 @@ export const Dashboard = () => {
           )}
         </p>
         <p className="text-gray-700">
-          <strong>Products stored:</strong> {userInfo?.productCount || 0}
+          <strong>Products stored:</strong>{" "}
+          {userInfo?.productCount || 0}
           {userInfo?.plan === "Free" && " / 5"}
         </p>
         {userInfo?.plan === "Free" && (
-          <Link 
-            to="/plans" 
+          <Link
+            to="/plans"
             className="inline-block mt-2 text-indigo-600 hover:underline"
           >
             Upgrade to Premium
@@ -148,15 +152,20 @@ export const Dashboard = () => {
         </div>
       ) : (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <p className="text-gray-500">No products found. Add some to get started!</p>
+          <p className="text-gray-500">
+            No products found. Add some to get started!
+          </p>
         </div>
       )}
 
       {/* Add product modal */}
       {showAddModal && (
-        <Modal onClose={() => setShowAddModal(false)} title="Add New Product">
-          <AddProductForm 
-            onSubmit={handleAddProduct} 
+        <Modal
+          onClose={() => setShowAddModal(false)}
+          title="Add New Product"
+        >
+          <AddProductForm
+            onSubmit={handleAddProduct}
             onCancel={() => setShowAddModal(false)}
           />
         </Modal>
@@ -178,7 +187,7 @@ function AddProductForm({ onSubmit, onCancel }) {
   const [form, setForm] = useState({
     name: "",
     category: "Food",
-    expiryDate: new Date().toISOString().split('T')[0], // Set default to today
+    expiryDate: new Date().toISOString().split("T")[0],
     price: "",
     weight: "",
     image: "",
@@ -187,7 +196,7 @@ function AddProductForm({ onSubmit, onCancel }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -201,9 +210,14 @@ function AddProductForm({ onSubmit, onCancel }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4"
+    >
       <div>
-        <label className="block text-sm font-medium text-gray-700">Product Name</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Product Name
+        </label>
         <input
           type="text"
           name="name"
@@ -215,7 +229,9 @@ function AddProductForm({ onSubmit, onCancel }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Category</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Category
+        </label>
         <select
           name="category"
           value={form.category}
@@ -228,20 +244,24 @@ function AddProductForm({ onSubmit, onCancel }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Expiry Date</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Expiry Date
+        </label>
         <input
           type="date"
           name="expiryDate"
           value={form.expiryDate}
           onChange={handleChange}
           required
-          min={new Date().toISOString().split('T')[0]}
+          min={new Date().toISOString().split("T")[0]}
           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Price (optional)</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Price (optional)
+        </label>
         <input
           type="number"
           name="price"
@@ -254,7 +274,9 @@ function AddProductForm({ onSubmit, onCancel }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Weight (g) (optional)</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Weight (g) (optional)
+        </label>
         <input
           type="number"
           name="weight"
@@ -266,7 +288,9 @@ function AddProductForm({ onSubmit, onCancel }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Image URL (optional)</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Image URL (optional)
+        </label>
         <input
           type="url"
           name="image"
@@ -297,3 +321,5 @@ function AddProductForm({ onSubmit, onCancel }) {
     </form>
   );
 }
+
+export default Dashboard;

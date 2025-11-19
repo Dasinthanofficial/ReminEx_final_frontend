@@ -1,5 +1,3 @@
-// src/pages/Register.jsx
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -65,7 +63,7 @@ const Register = () => {
     });
 
 
-    // FIX: Simplify the prompt call to remove the deprecated notification callback.
+
     window.google.accounts.id.prompt();
   };
 
@@ -76,16 +74,15 @@ const Register = () => {
       style={{ backgroundImage: `url(${registerimage})` }}
     >
       <div className="flex">
-        <div className="text-2xl text-white w-1/2">
-          Reduce Food Waste Save Money, <br />
-          Live Smart.
-        </div>
+        <div className=" w-1/2">
 
+        </div>
+       
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-1/2 h-screen p-8 border border-white/30 rounded-2xl shadow-xl bg-white/20 backdrop-blur-lg"
+          className="w-1/2 h-screen py-[80px] px-[150px] border border-white/30 rounded-2xl shadow-xl bg-white/20 backdrop-blur-lg"
         >
           <h2 className="text-3xl font-bold w-full text-center mb-8 text-white">
             Create Account

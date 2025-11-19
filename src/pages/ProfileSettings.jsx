@@ -6,6 +6,21 @@ import toast from "react-hot-toast";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
+/** Shared avatar URL resolver (same logic as in Navbar) */
+const getAvatarSrc = (url) => {
+  const fallback = "/uploads/default_avatar.png";
+
+  if (!url) url = fallback;
+  if (url.startsWith("blob:")) return url;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+
+  const base =
+    import.meta.env.VITE_API_URL?.replace(/\/api$/, "") ||
+    "http://localhost:5000";
+
+  return `${base}${url.startsWith("/") ? url : `/${url}`}`;
+};
+
 const ProfileSettings = () => {
   const { user, updateUser } = useAuth();
   const queryClient = useQueryClient();
@@ -18,20 +33,16 @@ const ProfileSettings = () => {
   });
 
   const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(
-    user?.avatar || "/uploads/default_avatar.png"
-  );
+  const [previewUrl, setPreviewUrl] = useState(user?.avatar || "");
 
   /* 🔹 Mutation: update profile */
   const updateProfileMutation = useMutation({
     mutationFn: async (formData) => {
-      // 👇 match to your Express route mount location:
-      // backend app.use("/api/user", userRoutes);
-      // so for baseURL = http://localhost:5000/api  -> use "/user/profile"
+      // backend: app.use("/api/user", userRoutes); PUT /profile
       const res = await api.put("/user/profile", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      return res; // interceptor already returns response.data
+      return res; // api interceptor returns response.data
     },
 
     onSuccess: (data) => {
@@ -39,10 +50,8 @@ const ProfileSettings = () => {
       if (updated) {
         queryClient.invalidateQueries(["user"]);
         updateUser(updated);
-        toast.success(data?.message || "Profile updated successfully!");
-      } else {
-        toast.success(data?.message || "Profile updated.");
       }
+      toast.success(data?.message || "Profile updated successfully!");
     },
 
     onError: (err) => {
@@ -55,7 +64,7 @@ const ProfileSettings = () => {
   const onSubmit = (form) => {
     const formData = new FormData();
     formData.append("name", form.name);
-    formData.append("email", form.email);
+    // Email is read-only and not updatable, so don't send it
     if (file) formData.append("avatar", file);
     updateProfileMutation.mutate(formData);
   };
@@ -69,23 +78,11 @@ const ProfileSettings = () => {
     }
   };
 
-  /* 🔹 Safe image‑URL resolver for preview and saved avatars */
-  const getAvatarSrc = (url) => {
-    if (!url) return "/uploads/default_avatar.png";
-    // 🟢 local preview blob -> show directly
-    if (url.startsWith("blob:")) return url;
-    // 🟢 full external URL
-    if (url.startsWith("http")) return url;
-    // 🟢 backend upload path like /uploads/filename.png
-    const base =
-      import.meta.env.VITE_API_URL?.replace(/\/api$/, "") ||
-      "http://localhost:5000";
-    return `${base}${url.startsWith("/") ? url : `/${url}`}`;
-  };
-
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white shadow-xl rounded-xl">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">👤 Profile Settings</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-8">
+        👤 Profile Settings
+      </h1>
 
       {updateProfileMutation.isError && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 flex items-center">
@@ -117,12 +114,15 @@ const ProfileSettings = () => {
               className="hidden"
             />
           </label>
-          <p className="text-sm text-gray-500 mt-2">Max 5 MB (JPG, PNG)</p>
+          <p className="text-sm text-gray-500 mt-2">Max 5 MB (JPG, PNG)</p>
         </div>
 
         {/* Name */}
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="name"
+            className="block text-sm font-medium text-gray-700"
+          >
             Full Name
           </label>
           <input
@@ -133,9 +133,12 @@ const ProfileSettings = () => {
           />
         </div>
 
-        {/* Email (read‑only) */}
+        {/* Email (read-only) */}
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700"
+          >
             Email
           </label>
           <input
@@ -157,7 +160,9 @@ const ProfileSettings = () => {
             disabled={updateProfileMutation.isPending}
             className="w-full inline-flex justify-center items-center py-3 px-4 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
           >
-            {updateProfileMutation.isPending ? "Saving…" : (
+            {updateProfileMutation.isPending ? (
+              "Saving…"
+            ) : (
               <>
                 <FiSave className="mr-2" /> Save Changes
               </>
