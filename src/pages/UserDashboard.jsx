@@ -183,16 +183,16 @@ const UserDashboard = () => {
                 Welcome back, {user?.name}!
               </h1>
               <p className="text-primary-100 mb-1">
-                Plan:{' '}
+                Plan:{" "}
                 <span className="font-semibold">
                   {user?.plan}
                 </span>
               </p>
               {user?.planExpiry && (
                 <p className="text-primary-100 text-sm">
-                  Plan expires on{' '}
+                  Plan expires on{" "}
                   <span className="font-semibold">
-                    {format(new Date(user.planExpiry), 'MMM dd, yyyy')}
+                    {format(new Date(user.planExpiry), "MMM dd, yyyy")}
                   </span>
                 </p>
               )}
@@ -219,160 +219,172 @@ const UserDashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid md:grid-cols-4 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white p-6 rounded-xl shadow-lg"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <FiPackage className="text-primary-500 text-2xl" />
-            <span className="text-2xl font-bold">{stats.totalProducts}</span>
-          </div>
-          <p className="text-gray-600">Total Products</p>
-          {user?.plan === 'Free' && (
-            <p className="text-xs text-gray-500 mt-2">Max 5 products</p>
-          )}
-        </motion.div>
+      {isLoading ? (
+        <div className="bg-white p-6 rounded-xl shadow-lg text-center">
+          <p className="text-gray-500">Loading your products…</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-4 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white p-6 rounded-xl shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <FiPackage className="text-primary-500 text-2xl" />
+              <span className="text-2xl font-bold">{stats.totalProducts}</span>
+            </div>
+            <p className="text-gray-600">Total Products</p>
+            {user?.plan === "Free" && (
+              <p className="text-xs text-gray-500 mt-2">Max 5 products</p>
+            )}
+          </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white p-6 rounded-xl shadow-lg"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <FiAlertTriangle className="text-yellow-500 text-2xl" />
-            <span className="text-2xl font-bold">{stats.expiringThisWeek}</span>
-          </div>
-          <p className="text-gray-600">Expiring This Week</p>
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white p-6 rounded-xl shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <FiAlertTriangle className="text-yellow-500 text-2xl" />
+              <span className="text-2xl font-bold">
+                {stats.expiringThisWeek}
+              </span>
+            </div>
+            <p className="text-gray-600">Expiring This Week</p>
+          </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white p-6 rounded-xl shadow-lg"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <FiAlertTriangle className="text-red-500 text-2xl" />
-            <span className="text-2xl font-bold">{stats.expiredProducts}</span>
-          </div>
-          <p className="text-gray-600">Expired Products</p>
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white p-6 rounded-xl shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <FiAlertTriangle className="text-red-500 text-2xl" />
+              <span className="text-2xl font-bold">
+                {stats.expiredProducts}
+              </span>
+            </div>
+            <p className="text-gray-600">Expired Products</p>
+          </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white p-6 rounded-xl shadow-lg"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <FiDollarSign className="text-green-500 text-2xl" />
-            <span className="text-2xl font-bold">
-              ${stats.totalValue.toFixed(2)}
-            </span>
-          </div>
-          <p className="text-gray-600">Total Value</p>
-        </motion.div>
-      </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white p-6 rounded-xl shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <FiDollarSign className="text-green-500 text-2xl" />
+              <span className="text-2xl font-bold">
+                ${stats.totalValue.toFixed(2)}
+              </span>
+            </div>
+            <p className="text-gray-600">Total Value</p>
+          </motion.div>
+        </div>
+      )}
 
       {/* Recent Products & Expiring Soon */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Recent Products */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">Recent Products</h2>
+      {!isLoading && (
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Recent Products */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Recent Products</h2>
+              <Link
+                to="/products/add"
+                className="text-primary-500 hover:text-primary-600 flex items-center"
+              >
+                <FiPlus className="mr-1" /> Add New
+              </Link>
+            </div>
+
+            {recentProducts.length > 0 ? (
+              <div className="space-y-3">
+                {recentProducts.map((product) => (
+                  <div
+                    key={product._id}
+                    className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div>
+                      <h3 className="font-semibold">{product.name}</h3>
+                      <p className="text-sm text-gray-500">
+                        Expires:{" "}
+                        {format(
+                          new Date(product.expiryDate),
+                          "MMM dd, yyyy"
+                        )}
+                      </p>
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">
+                      ${product.price || 0}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-8">
+                No products added yet
+              </p>
+            )}
+
             <Link
-              to="/products/add"
-              className="text-primary-500 hover:text-primary-600 flex items-center"
+              to="/products"
+              className="mt-4 block text-center text-primary-500 hover:text-primary-600"
             >
-              <FiPlus className="mr-1" /> Add New
+              View All Products
             </Link>
           </div>
 
-          {recentProducts.length > 0 ? (
-            <div className="space-y-3">
-              {recentProducts.map((product) => (
-                <div
-                  key={product._id}
-                  className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
-                >
-                  <div>
-                    <h3 className="font-semibold">{product.name}</h3>
-                    <p className="text-sm text-gray-500">
-                      Expires:{' '}
-                      {format(
-                        new Date(product.expiryDate),
-                        'MMM dd, yyyy'
-                      )}
-                    </p>
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">
-                    ${product.price || 0}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-8">
-              No products added yet
-            </p>
-          )}
+          {/* Expiring Soon */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-bold mb-6">Expiring Soon</h2>
 
-          <Link
-            to="/products"
-            className="mt-4 block text-center text-primary-500 hover:text-primary-600"
-          >
-            View All Products
-          </Link>
-        </div>
-
-        {/* Expiring Soon */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-xl font-bold mb-6">Expiring Soon</h2>
-
-          {expiringProducts.length > 0 ? (
-            <div className="space-y-3">
-              {expiringProducts.map((product) => {
-                const days = Math.ceil(
-                  (new Date(product.expiryDate) - new Date()) /
-                    (1000 * 60 * 60 * 24)
-                );
-                return (
-                  <div
-                    key={product._id}
-                    className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="font-semibold">
-                          {product.name}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {product.category}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-yellow-700">
-                          {days} day{days !== 1 ? 's' : ''} left
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          ${product.price || 0}
-                        </p>
+            {expiringProducts.length > 0 ? (
+              <div className="space-y-3">
+                {expiringProducts.map((product) => {
+                  const days = Math.ceil(
+                    (new Date(product.expiryDate) - new Date()) /
+                      (1000 * 60 * 60 * 24)
+                  );
+                  return (
+                    <div
+                      key={product._id}
+                      className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="font-semibold">
+                            {product.name}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {product.category}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-yellow-700">
+                            {days} day{days !== 1 ? "s" : ""} left
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            ${product.price || 0}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-8">
-              No products expiring soon
-            </p>
-          )}
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-8">
+                No products expiring soon
+              </p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Premium features */}
       {isPremium && (
