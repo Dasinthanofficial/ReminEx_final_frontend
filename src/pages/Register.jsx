@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../context/AuthContext';
-import { FiMail, FiLock, FiEye, FiEyeOff, FiUser } from 'react-icons/fi';
+import { FiMail, FiLock, FiEye, FiEyeOff, FiUser, FiCheck } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import registerimage from '../assets/register.png';
 import toast from 'react-hot-toast';
-
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,14 +13,11 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-
   const { register: registerUser, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors }, watch } = useForm();
 
-
   const password = watch('password');
-
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -35,251 +31,217 @@ const Register = () => {
     }
   };
 
-
   const handleGoogleContinue = () => {
     if (!window.google) {
-      console.error('Google script not loaded');
-      toast.error('Google sign-in is not available right now.');
+      toast.error('Google sign-in unavailable.');
       return;
     }
-
-
     setGoogleLoading(true);
-
-
     window.google.accounts.id.initialize({
       client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
       callback: async (response) => {
         try {
-          const idToken = response.credential;
-          await loginWithGoogle(idToken);
+          await loginWithGoogle(response.credential);
           navigate('/dashboard');
         } catch (err) {
-          console.error('Google sign-up/login failed:', err);
+          console.error(err);
         } finally {
           setGoogleLoading(false);
         }
       },
     });
-
-
-
     window.google.accounts.id.prompt();
   };
 
-
   return (
-    <div
-      className="min-h-screen bg-cover bg-center"
-      style={{ backgroundImage: `url(${registerimage})` }}
-    >
-      <div className="flex">
-        <div className=" w-1/2">
-
+    <div className="min-h-screen flex bg-white">
+      
+      {/* Left Side - Image & Branding (Hidden on Mobile) */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-[#122017] overflow-hidden">
+        <div className="absolute inset-0 bg-black/40 z-10" />
+        <img 
+          src={registerimage} 
+          alt="Background" 
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        
+        <div className="relative z-20 flex flex-col justify-between w-full h-full p-12 text-white">
+          <div className="font-bold text-2xl tracking-wide">ReminEx</div>
+          
+          <div className="space-y-6 mb-12">
+            <h1 className="text-5xl font-bold leading-tight">
+              Stop wasting food. <br/> 
+              <span className="text-[#38E07B]">Start saving money.</span>
+            </h1>
+            <p className="text-lg text-gray-300 max-w-md">
+              Join thousands of smart households tracking their inventory and reducing waste every single day.
+            </p>
+            
+            <div className="flex gap-4 pt-4">
+              <div className="flex -space-x-4">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="w-10 h-10 rounded-full border-2 border-[#122017] bg-gray-300" />
+                ))}
+              </div>
+              <div className="flex flex-col justify-center">
+                <span className="font-bold text-sm">1,000+ Users</span>
+                <span className="text-xs text-gray-400">Trust our platform</span>
+              </div>
+            </div>
+          </div>
         </div>
-       
+      </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-1/2 h-screen py-[80px] px-[150px] border border-white/30 rounded-2xl shadow-xl bg-white/20 backdrop-blur-lg"
+      {/* Right Side - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 md:p-12 overflow-y-auto">
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-md w-full space-y-8"
         >
-          <h2 className="text-3xl font-bold w-full text-center mb-8 text-white">
-            Create Account
-          </h2>
-
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-200 mb-2">
-                Full Name
-              </label>
-              <div className="relative">
-                <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-300" />
-                <input
-                  type="text"
-                  {...register('name', {
-                    required: 'Name is required',
-                    minLength: { value: 2, message: 'Name must be at least 2 characters' },
-                    pattern: {
-                      value: /^[a-zA-Z\s]+$/,
-                      message: 'Name can only contain letters and spaces',
-                    },
-                  })}
-                  className="w-full pl-10 pr-3 py-2 bg-transparent border border-white/30 rounded-lg text-white placeholder:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="John Doe"
-                />
-              </div>
-              {errors.name && (
-                <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-200 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-300" />
-                <input
-                  type="email"
-                  {...register('email', {
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address',
-                    },
-                  })}
-                  className="w-full pl-10 pr-3 py-2 bg-transparent border border-white/30 rounded-lg text-white placeholder:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="john@example.com"
-                />
-              </div>
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-200 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-300" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  {...register('password', {
-                    required: 'Password is required',
-                    minLength: {
-                      value: 6,
-                      message: 'Password must be at least 6 characters',
-                    },
-                    pattern: {
-                      value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                      message:
-                        'Password must contain uppercase, lowercase, and number',
-                    },
-                  })}
-                  className="w-full pl-10 pr-10 py-2 bg-transparent border border-white/30 rounded-lg text-white placeholder:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white"
-                >
-                  {showPassword ? <FiEyeOff /> : <FiEye />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-200 mb-2">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-300" />
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  {...register('confirmPassword', {
-                    required: 'Please confirm your password',
-                    validate: (value) =>
-                      value === password || 'Passwords do not match',
-                  })}
-                  className="w-full pl-10 pr-10 py-2 bg-transparent border border-white/30 rounded-lg text-white placeholder:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white"
-                >
-                  {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
-                </button>
-              </div>
-              {errors.confirmPassword && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.confirmPassword.message}
-                </p>
-              )}
-            </div>
-
-            <div className="flex items-start">
-              <input
-                type="checkbox"
-                {...register('terms', {
-                  required: 'You must accept the terms and conditions',
-                })}
-                className="mt-1 mr-2 accent-primary-500 bg-transparent"
-              />
-              <label className="text-sm text-gray-200">
-                I agree to the{' '}
-                <Link
-                  to="/terms"
-                  className="font-semibold text-white hover:underline"
-                >
-                  Terms and Conditions
-                </Link>{' '}
-                and{' '}
-                <Link
-                  to="/privacy"
-                  className="font-semibold text-white hover:underline"
-                >
-                  Privacy Policy
-                </Link>
-              </label>
-            </div>
-            {errors.terms && (
-              <p className="text-red-500 text-sm">{errors.terms.message}</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-primary-500 text-white py-2 rounded-lg hover:bg-primary-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Creating Account...' : 'Sign Up'}
-            </button>
-          </form>
-
-
-          <div className="my-4 flex items-center">
-            <div className="flex-1 h-px bg-white/40" />
-            <span className="px-3 text-gray-200 text-sm">or</span>
-            <div className="flex-1 h-px bg-white/40" />
+          <div className="text-center lg:text-left">
+            <h2 className="text-3xl font-bold text-gray-900">Create an account</h2>
+            <p className="mt-2 text-gray-500">Let's get you set up with your free account.</p>
           </div>
 
-
+          {/* Google Button */}
           <button
             type="button"
             onClick={handleGoogleContinue}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-2 border border-white/40 text-white py-2 rounded-lg hover:bg-white/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition font-medium shadow-sm"
           >
-            <img
-              src="https://developers.google.com/identity/images/g-logo.png"
-              alt="Google"
-              className="w-5 h-5"
-            />
-            {googleLoading ? 'Connecting...' : 'Continue with Google'}
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+            {googleLoading ? 'Connecting...' : 'Sign up with Google'}
           </button>
 
-
-          <div className="mt-6 text-center">
-            <p className="text-gray-200">
-              Already have an account?{' '}
-              <Link to="/login" className="font-semibold text-white hover:underline">
-                Login
-              </Link>
-            </p>
+          <div className="relative flex py-2 items-center">
+            <div className="flex-grow border-t border-gray-200"></div>
+            <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">Or sign up with email</span>
+            <div className="flex-grow border-t border-gray-200"></div>
           </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            
+            {/* Name Input */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Full Name</label>
+              <div className="relative">
+                <FiUser className="absolute left-3 top-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  {...register('name', {
+                    required: 'Name is required',
+                    minLength: { value: 2, message: 'Min 2 chars' },
+                    pattern: { value: /^[a-zA-Z\s]+$/, message: 'Letters only' }
+                  })}
+                  className={`w-full pl-10 pr-4 py-3 bg-gray-50 border ${errors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-[#38E07B] focus:ring-[#38E07B]'} rounded-xl outline-none transition-all`}
+                  placeholder="John Doe"
+                />
+              </div>
+              {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
+            </div>
+
+            {/* Email Input */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Email Address</label>
+              <div className="relative">
+                <FiMail className="absolute left-3 top-3.5 text-gray-400" />
+                <input
+                  type="email"
+                  {...register('email', {
+                    required: 'Email is required',
+                    pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' }
+                  })}
+                  className={`w-full pl-10 pr-4 py-3 bg-gray-50 border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-[#38E07B] focus:ring-[#38E07B]'} rounded-xl outline-none transition-all`}
+                  placeholder="name@example.com"
+                />
+              </div>
+              {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
+            </div>
+
+            {/* Password Input */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Password</label>
+                <div className="relative">
+                  <FiLock className="absolute left-3 top-3.5 text-gray-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    {...register('password', {
+                      required: 'Required',
+                      minLength: { value: 6, message: 'Min 6 chars' },
+                      pattern: { value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, message: 'Upper, Lower, Number' }
+                    })}
+                    className={`w-full pl-10 pr-10 py-3 bg-gray-50 border ${errors.password ? 'border-red-500' : 'border-gray-200 focus:border-[#38E07B] focus:ring-[#38E07B]'} rounded-xl outline-none`}
+                    placeholder="••••••••"
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600">
+                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Confirm</label>
+                <div className="relative">
+                  <FiLock className="absolute left-3 top-3.5 text-gray-400" />
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    {...register('confirmPassword', {
+                      required: 'Required',
+                      validate: v => v === password || 'Mismatch'
+                    })}
+                    className={`w-full pl-10 pr-10 py-3 bg-gray-50 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-200 focus:border-[#38E07B] focus:ring-[#38E07B]'} rounded-xl outline-none`}
+                    placeholder="••••••••"
+                  />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600">
+                    {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                  </button>
+                </div>
+                {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword.message}</p>}
+              </div>
+            </div>
+
+            {/* Terms Checkbox */}
+            <div className="flex items-start">
+              <div className="flex items-center h-5">
+                <input
+                  id="terms"
+                  type="checkbox"
+                  {...register('terms', { required: 'Required' })}
+                  className="w-4 h-4 rounded border-gray-300 text-[#38E07B] focus:ring-[#38E07B]"
+                />
+              </div>
+              <div className="ml-3 text-sm">
+                <label htmlFor="terms" className="text-gray-500">
+                  I agree to the <Link to="/terms" className="text-[#38E07B] font-semibold hover:underline">Terms</Link> and <Link to="/privacy" className="text-[#38E07B] font-semibold hover:underline">Privacy Policy</Link>
+                </label>
+                {errors.terms && <p className="text-xs text-red-500 mt-1">You must accept the terms.</p>}
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-[#38E07B] text-[#122017] font-bold py-3.5 rounded-xl hover:bg-[#2fc468] hover:shadow-lg transition-all transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Creating Account...' : 'Create Account'}
+            </button>
+
+            <p className="text-center text-sm text-gray-500">
+              Already have an account?{' '}
+              <Link to="/login" className="font-bold text-[#38E07B] hover:underline">Log in</Link>
+            </p>
+
+          </form>
         </motion.div>
       </div>
     </div>
   );
 };
-
 
 export default Register;

@@ -1,358 +1,195 @@
-// src/components/Navbar.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import {
-  FiMenu,
-  FiX,
-  FiUser,
-  FiLogOut,
-  FiSettings,
-  FiChevronDown,
-} from 'react-icons/fi';
+import { FiMenu, FiX, FiUser, FiLogOut, FiSettings, FiChevronDown, FiGrid } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
-
 import Logo from '../assets/logo.png';
-
-// Active/inactive link styles
-const activeLinkClass = 'text-[#FFA500] font-semibold';
-const inactiveLinkClass = 'text-white hover:text-[#FFA500] transition';
-
-const getNavLinkClass = ({ isActive }) =>
-  isActive ? activeLinkClass : inactiveLinkClass;
-
-/**
- * Normalize avatar URL:
- * - blob:... (local preview) -> use as-is
- * - http(s)://... -> use as-is
- * - /uploads/...  -> prefix with API base (http://localhost:5000 or VITE_API_URL)
- */
-const getAvatarSrc = (url) => {
-  // Fallback avatar path from backend
-  const fallback = '/uploads/default_avatar.png';
-
-  if (!url) url = fallback;
-
-  // Local preview blob
-  if (url.startsWith('blob:')) return url;
-
-  // Already full URL
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-
-  // Relative path from backend (e.g. /uploads/xxx.png)
-  const base =
-    import.meta.env.VITE_API_URL?.replace(/\/api$/, '') ||
-    'http://localhost:5000';
-
-  return `${base}${url.startsWith('/') ? url : `/${url}`}`;
-};
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  const ProfileDropdown = () => (
-    <div className="relative z-50">
-      <button
-        onClick={() => setIsDropdownOpen((prev) => !prev)}
-        className="flex items-center space-x-2 text-white hover:text-[#FFA500] transition p-1 rounded-full focus:outline-none"
-      >
-        {user?.avatar ? (
-          <img
-            src={getAvatarSrc(user.avatar)}
-            alt="User Avatar"
-            className="w-8 h-8 rounded-full object-cover border-2 border-[#FFA500]"
-          />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white border-2 border-transparent hover:border-[#FFA500] transition">
-            <FiUser className="w-4 h-4" />
-          </div>
-        )}
-        <FiChevronDown
-          className={`w-4 h-4 transition-transform ${
-            isDropdownOpen ? 'rotate-180' : 'rotate-0'
-          }`}
-        />
-      </button>
+  const getAvatarSrc = (url) => {
+    const fallback = '/uploads/default_avatar.png';
+    if (!url) url = fallback;
+    if (url.startsWith('blob:') || url.startsWith('http')) return url;
+    const base = import.meta.env.VITE_API_URL?.replace(/\/api$/, '') || 'http://localhost:5000';
+    return `${base}${url.startsWith('/') ? url : `/${url}`}`;
+  };
 
-      <AnimatePresence>
-        {isDropdownOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-56 origin-top-right bg-[#1e3025] border border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden"
-          >
-            <div className="py-1">
-              <div className="px-4 py-2 text-sm text-white border-b border-gray-700">
-                <p className="font-semibold truncate">
-                  {user?.name || 'User Profile'}
-                </p>
-                {user?.plan !== 'Free' && (
-                  <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full mt-1 inline-block">
-                    {user?.plan}
-                  </span>
-                )}
-              </div>
-
-              <NavLink
-                to="/profile"
-                onClick={() => setIsDropdownOpen(false)}
-                className="flex items-center px-4 py-2 text-sm text-white hover:bg-white/10 hover:text-[#FFA500] transition"
-              >
-                <FiSettings className="mr-3 w-4 h-4" />
-                Profile Settings
-              </NavLink>
-
-              <button
-                onClick={() => {
-                  handleLogout();
-                  setIsDropdownOpen(false);
-                }}
-                className="w-full text-left flex items-center px-4 py-2 text-sm text-red-500 hover:bg-red-900/50 transition border-t border-gray-700"
-              >
-                <FiLogOut className="mr-3 w-4 h-4" />
-                Logout
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+  const navLinkStyle = ({ isActive }) =>
+    `text-sm font-medium transition-all duration-300 px-4 py-2 rounded-full ${
+      isActive 
+        ? 'bg-[#38E07B]/10 text-[#38E07B] shadow-[0_0_15px_rgba(56,224,123,0.2)] border border-[#38E07B]/20' 
+        : 'text-gray-300 hover:text-white hover:bg-white/5'
+    }`;
 
   return (
-    <nav className="bg-[#122017] sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
+    <nav 
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled 
+          ? 'bg-[#122017]/80 backdrop-blur-xl border-b border-white/10 shadow-lg' 
+          : 'bg-transparent border-b border-transparent'
+      }`}
+    >
+      <div className="container mx-auto px-6">
+        <div className="flex justify-between items-center h-20">
+          
           {/* Logo */}
-          <NavLink to="/">
-            <img src={Logo} alt="App Logo" className="h-40 mt-5" />
+          <NavLink to="/" className="flex items-center gap-2 group">
+            <img src={Logo} alt="ReminEx" className="h-10 w-auto group-hover:scale-105 transition-transform duration-300" />
+            <span className="text-xl font-bold text-white tracking-wide group-hover:text-[#38E07B] transition-colors">
+              ReminEx
+            </span>
           </NavLink>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-6">
-            <NavLink to="/" className={getNavLinkClass} end>
-              Home
-            </NavLink>
-            <NavLink to="/about" className={getNavLinkClass}>
-              About
-            </NavLink>
-            <NavLink to="/plans" className={getNavLinkClass}>
-              Plans
-            </NavLink>
+          <div className="hidden md:flex items-center gap-2">
+            <NavLink to="/" className={navLinkStyle} end>Home</NavLink>
+            <NavLink to="/about" className={navLinkStyle}>About</NavLink>
+            <NavLink to="/plans" className={navLinkStyle}>Pricing</NavLink>
 
             {isAuthenticated ? (
-              <>
-                <NavLink to="/dashboard" className={getNavLinkClass}>
+              <div className="flex items-center gap-4 ml-6 pl-6 border-l border-white/10">
+                <NavLink to="/dashboard" className={navLinkStyle}>
                   Dashboard
                 </NavLink>
-                <NavLink to="/products" className={getNavLinkClass}>
-                  Products
-                </NavLink>
+                
                 {isAdmin && (
-                  <NavLink to="/admin" className={getNavLinkClass}>
-                    Admin
+                  <NavLink to="/admin" className="text-[#38E07B] hover:text-white transition-colors">
+                    <FiGrid className="text-xl" title="Admin Panel" />
                   </NavLink>
                 )}
-                <ProfileDropdown />
-              </>
+
+                {/* Profile Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="flex items-center gap-3 focus:outline-none group"
+                  >
+                    <div className="relative">
+                      <img
+                        src={getAvatarSrc(user?.avatar)}
+                        alt="Avatar"
+                        className="w-9 h-9 rounded-full object-cover border-2 border-[#38E07B]/50 group-hover:border-[#38E07B] transition-colors"
+                      />
+                      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#38E07B] rounded-full border-2 border-[#122017]"></div>
+                    </div>
+                    <FiChevronDown className={`text-gray-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {isDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute right-0 mt-4 w-64 bg-[#1a2c23]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden origin-top-right"
+                      >
+                        <div className="p-4 border-b border-white/5 bg-gradient-to-r from-[#38E07B]/10 to-transparent">
+                          <p className="text-white font-bold truncate">{user?.name}</p>
+                          <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+                          {user?.plan !== 'Free' && (
+                            <span className="mt-2 inline-block px-2 py-0.5 bg-[#38E07B] text-[#122017] text-[10px] font-bold rounded-full uppercase tracking-wider">
+                              {user?.plan} PRO
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="p-2">
+                          <NavLink 
+                            to="/profile" 
+                            onClick={() => setIsDropdownOpen(false)}
+                            className="flex items-center px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white rounded-xl transition-all group"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mr-3 group-hover:bg-[#38E07B]/20 group-hover:text-[#38E07B] transition-colors">
+                              <FiSettings />
+                            </div>
+                            Settings
+                          </NavLink>
+                          
+                          <button
+                            onClick={() => { handleLogout(); setIsDropdownOpen(false); }}
+                            className="w-full flex items-center px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-all group mt-1"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center mr-3 group-hover:bg-red-500/20 transition-colors">
+                              <FiLogOut />
+                            </div>
+                            Sign Out
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
             ) : (
-              <div className="flex items-center space-x-3">
-                <NavLink to="/login" className={inactiveLinkClass}>
-                  Login
+              <div className="flex items-center gap-4 ml-6">
+                <NavLink to="/login" className="text-white hover:text-[#38E07B] font-medium transition-colors">
+                  Log In
                 </NavLink>
                 <NavLink
                   to="/register"
-                  className="bg-[#38E07B] text-black px-4 py-2 rounded-lg hover:bg-[#FFA500] transition"
+                  className="px-5 py-2.5 bg-[#38E07B] text-[#122017] font-bold rounded-xl hover:bg-[#2fc468] hover:shadow-[0_0_20px_rgba(56,224,123,0.3)] transition-all transform hover:scale-105"
                 >
-                  Register
+                  Get Started
                 </NavLink>
               </div>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden text-white"
-            onClick={() => setIsOpen((prev) => !prev)}
-          >
-            {isOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+          {/* Mobile Toggle */}
+          <button onClick={() => setIsOpen(!isOpen)} className="md:hidden text-white text-2xl focus:outline-none">
+            {isOpen ? <FiX /> : <FiMenu />}
           </button>
         </div>
-
-        {/* Mobile Menu */}
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="md:hidden overflow-hidden bg-white/10"
-            >
-              <div className="py-4 space-y-3">
-                <NavLink
-                  to="/"
-                  className={({ isActive }) =>
-                    `block p-2 rounded ${
-                      isActive
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'text-white hover:bg-gray-700'
-                    }`
-                  }
-                  end
-                  onClick={() => setIsOpen(false)}
-                >
-                  Home
-                </NavLink>
-                <NavLink
-                  to="/about"
-                  className={({ isActive }) =>
-                    `block p-2 rounded ${
-                      isActive
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'text-white hover:bg-gray-700'
-                    }`
-                  }
-                  onClick={() => setIsOpen(false)}
-                >
-                  About
-                </NavLink>
-                <NavLink
-                  to="/plans"
-                  className={({ isActive }) =>
-                    `block p-2 rounded ${
-                      isActive
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'text-white hover:bg-gray-700'
-                    }`
-                  }
-                  onClick={() => setIsOpen(false)}
-                >
-                  Plans
-                </NavLink>
-
-                {isAuthenticated ? (
-                  <>
-                    <NavLink
-                      to="/dashboard"
-                      className={({ isActive }) =>
-                        `block p-2 rounded ${
-                          isActive
-                            ? 'bg-blue-100 text-blue-600'
-                            : 'text-white hover:bg-gray-700'
-                        }`
-                      }
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Dashboard
-                    </NavLink>
-                    <NavLink
-                      to="/products"
-                      className={({ isActive }) =>
-                        `block p-2 rounded ${
-                          isActive
-                            ? 'bg-blue-100 text-blue-600'
-                            : 'text-white hover:bg-gray-700'
-                        }`
-                      }
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Products
-                    </NavLink>
-                    {isAdmin && (
-                      <NavLink
-                        to="/admin"
-                        className={({ isActive }) =>
-                          `block p-2 rounded ${
-                            isActive
-                              ? 'bg-blue-100 text-blue-600'
-                              : 'text-white hover:bg-gray-700'
-                          }`
-                        }
-                        onClick={() => setIsOpen(false)}
-                      >
-                        Admin
-                      </NavLink>
-                    )}
-
-                    {/* Profile Settings link */}
-                    <NavLink
-                      to="/profile"
-                      className={({ isActive }) =>
-                        `flex items-center p-2 rounded ${
-                          isActive
-                            ? 'bg-blue-100 text-blue-600'
-                            : 'text-white hover:bg-gray-700'
-                        }`
-                      }
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <FiSettings className="mr-2" />
-                      Profile Settings
-                    </NavLink>
-
-                    <div className="pt-3 border-t border-gray-700 text-white">
-                      <div className="flex items-center space-x-2 mb-3">
-                        {user?.avatar ? (
-                          <img
-                            src={getAvatarSrc(user.avatar)}
-                            alt="User Avatar"
-                            className="w-6 h-6 rounded-full object-cover"
-                          />
-                        ) : (
-                          <FiUser />
-                        )}
-                        <span>{user?.name}</span>
-                        {user?.plan !== 'Free' && (
-                          <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full">
-                            {user?.plan}
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => {
-                          handleLogout();
-                          setIsOpen(false);
-                        }}
-                        className="flex items-center text-red-500 hover:text-red-400 transition"
-                      >
-                        <FiLogOut className="mr-1" />
-                        Logout
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="pt-3 border-t border-gray-700 space-y-3">
-                    <NavLink
-                      to="/login"
-                      className="block text-center bg-gray-200 py-2 rounded-lg"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Login
-                    </NavLink>
-                    <NavLink
-                      to="/register"
-                      className="block text-center bg-[#38E07B] text-black py-2 rounded-lg hover:bg-[#FFA500] transition"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Register
-                    </NavLink>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden bg-[#122017]/95 backdrop-blur-xl border-b border-white/10 overflow-hidden"
+          >
+            <div className="px-6 py-8 space-y-4">
+              <NavLink to="/" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">Home</NavLink>
+              <NavLink to="/about" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">About</NavLink>
+              <NavLink to="/plans" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">Pricing</NavLink>
+              
+              {isAuthenticated ? (
+                <>
+                  <div className="h-px bg-white/10 my-4"></div>
+                  <NavLink to="/dashboard" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-[#38E07B]">Dashboard</NavLink>
+                  <NavLink to="/profile" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">Profile Settings</NavLink>
+                  <button onClick={handleLogout} className="block w-full text-left text-lg font-medium text-red-400 mt-4">Sign Out</button>
+                </>
+              ) : (
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  <NavLink to="/login" onClick={() => setIsOpen(false)} className="py-3 text-center rounded-xl bg-white/5 text-white border border-white/10">Log In</NavLink>
+                  <NavLink to="/register" onClick={() => setIsOpen(false)} className="py-3 text-center rounded-xl bg-[#38E07B] text-[#122017] font-bold">Sign Up</NavLink>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };

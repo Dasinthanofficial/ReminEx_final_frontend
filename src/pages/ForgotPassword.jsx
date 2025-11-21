@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { FiMail, FiArrowLeft } from 'react-icons/fi';
+// ✅ Added FiLock to the import
+import { FiMail, FiArrowLeft, FiCheckCircle, FiLock } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { authService } from '../services/authService';
@@ -24,97 +25,116 @@ const ForgotPassword = () => {
     }
   };
 
-  if (emailSent) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md text-center"
-        >
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <FiMail className="text-green-600 text-2xl" />
-          </div>
-          <h2 className="text-2xl font-bold mb-4">Check Your Email</h2>
-          <p className="text-gray-600 mb-6">
-            We've sent a 6-digit OTP to your email address. 
-            Use it to reset your password.
-          </p>
-          <Link
-            to="/reset-password"
-            className="bg-primary-500 text-white px-6 py-3 rounded-lg hover:bg-primary-600 transition inline-block"
-          >
-            Enter OTP
-          </Link>
-          <p className="text-sm text-gray-500 mt-4">
-            Didn't receive the email? Check your spam folder or{' '}
-            <button
-              onClick={() => setEmailSent(false)}
-              className="text-primary-500 hover:text-primary-600"
-            >
-              try again
-            </button>
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-[80vh] flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-[#122017] relative overflow-hidden px-4">
+      
+      {/* Background Glow Effects */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#38E07B] rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-pulse"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-[128px] opacity-10 animate-pulse delay-1000"></div>
+
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="relative z-10 w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl p-8 md:p-10 text-white"
       >
-        <h2 className="text-3xl font-bold text-center mb-2">Forgot Password?</h2>
-        <p className="text-gray-600 text-center mb-8">
-          No worries! Enter your email and we'll send you an OTP to reset your password.
-        </p>
-        
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address
-            </label>
-            <div className="relative">
-              <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="email"
-                {...register('email', {
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address',
-                  },
-                })}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Enter your email"
-              />
-            </div>
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-            )}
+        {emailSent ? (
+          // Success State
+          <div className="text-center">
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="w-20 h-20 bg-[#38E07B]/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-[#38E07B]/50"
+            >
+              <FiCheckCircle className="text-[#38E07B] text-4xl" />
+            </motion.div>
+            
+            <h2 className="text-3xl font-bold mb-3">Check your email</h2>
+            <p className="text-gray-300 mb-8 leading-relaxed">
+              We've sent a 6-digit OTP to your inbox. <br/>
+              Please enter it to verify your identity.
+            </p>
+
+            <Link
+              to="/reset-password"
+              className="block w-full py-3.5 bg-[#38E07B] text-[#122017] font-bold rounded-xl hover:bg-[#2fc468] transition-all transform hover:scale-[1.02] shadow-lg shadow-green-900/20"
+            >
+              Enter OTP
+            </Link>
+
+            <p className="text-sm text-gray-400 mt-6">
+              Didn't receive it?{' '}
+              <button
+                onClick={() => setEmailSent(false)}
+                className="text-[#38E07B] hover:text-white font-medium transition-colors underline underline-offset-4"
+              >
+                Resend email
+              </button>
+            </p>
           </div>
+        ) : (
+          // Form State
+          <div>
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/10">
+                 <FiLock className="text-3xl text-[#38E07B]" />
+              </div>
+              <h2 className="text-3xl font-bold">Reset Password</h2>
+              <p className="text-gray-400 mt-2 text-sm">
+                Enter your email and we'll send you instructions to reset your password.
+              </p>
+            </div>
+            
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-gray-400 ml-1">
+                  Email Address
+                </label>
+                <div className="relative group">
+                  <FiMail className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-[#38E07B] transition-colors text-xl" />
+                  <input
+                    type="email"
+                    {...register('email', {
+                      required: 'Email is required',
+                      pattern: {
+                        value: /^\S+@\S+$/i,
+                        message: 'Invalid email address',
+                      },
+                    })}
+                    className={`w-full pl-12 pr-4 py-3.5 bg-black/20 border ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-white/10 focus:border-[#38E07B] focus:ring-[#38E07B]/50'} rounded-xl text-white placeholder-gray-500 outline-none transition-all focus:ring-2`}
+                    placeholder="name@example.com"
+                  />
+                </div>
+                {errors.email && (
+                  <p className="text-xs text-red-400 ml-1 flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-red-400"></span>
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-primary-500 text-white py-2 rounded-lg hover:bg-primary-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Sending OTP...' : 'Send OTP'}
-          </button>
-        </form>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3.5 bg-[#38E07B] text-[#122017] font-bold rounded-xl hover:bg-[#2fc468] transition-all transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-green-900/20 flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-[#122017] border-t-transparent rounded-full animate-spin" />
+                ) : 'Send Instructions'}
+              </button>
+            </form>
 
-        <div className="mt-6">
-          <Link
-            to="/login"
-            className="flex items-center justify-center text-gray-600 hover:text-primary-500 transition"
-          >
-            <FiArrowLeft className="mr-2" />
-            Back to Login
-          </Link>
-        </div>
+            <div className="mt-8 pt-6 border-t border-white/10 text-center">
+              <Link
+                to="/login"
+                className="inline-flex items-center text-gray-400 hover:text-white transition-colors font-medium group"
+              >
+                <FiArrowLeft className="mr-2 group-hover:-translate-x-1 transition-transform" />
+                Back to Login
+              </Link>
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>
   );

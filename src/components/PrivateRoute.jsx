@@ -9,25 +9,22 @@ const PrivateRoute = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#38E07B]"></div>
       </div>
     );
   }
 
+  // 1. Not logged in? Go to Login
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Prevent admins from accessing product routes
-  const productRoutes = ['/products', '/products/add'];
-  const isProductRoute = productRoutes.some(route => 
-    location.pathname === route || location.pathname.startsWith(route + '/')
-  );
-  
-  if (user?.role === 'admin' && isProductRoute) {
+  // 2. 🟢 SECURITY CHECK: If Admin tries to access User routes, send to Admin Dashboard
+  if (user?.role === 'admin') {
     return <Navigate to="/admin" replace />;
   }
 
+  // 3. Regular User? Allow access
   return <Outlet />;
 };
 
