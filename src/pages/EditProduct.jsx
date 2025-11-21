@@ -2,12 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { productService } from "../services/productService";
 import { getImageUrl } from "../utils/imageHelper";
-import { FiSave, FiArrowLeft, FiImage, FiCalendar, FiDollarSign, FiBox } from "react-icons/fi";
+import { useAuth } from "../context/AuthContext";
+import { convertUSDToLocal, convertLocalToUSD } from "../utils/currencyHelper";
+import { FiSave, FiArrowLeft, FiImage, FiCalendar, FiUpload, FiLink } from "react-icons/fi";
 import toast from "react-hot-toast";
 
 const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { currency } = useAuth();
 
   const [product, setProduct] = useState({
     name: "",
@@ -22,23 +25,24 @@ const EditProduct = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Fetch Product Data
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const data = await productService.getProduct(id);
-        
-        // Format date for input (YYYY-MM-DD)
         const formattedDate = data.expiryDate 
           ? new Date(data.expiryDate).toISOString().split('T')[0] 
           : "";
 
+        const localPrice = data.price 
+          ? convertUSDToLocal(data.price, currency) 
+          : "";
+
         setProduct({
           ...data,
+          price: localPrice,
           expiryDate: formattedDate
         });
 
-        // Set initial preview using helper
         setPreview(getImageUrl(data.image));
       } catch (err) {
         toast.error("Failed to load product.");
@@ -49,7 +53,7 @@ const EditProduct = () => {
     };
 
     fetchProduct();
-  }, [id, navigate]);
+  }, [id, navigate, currency]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -73,11 +77,13 @@ const EditProduct = () => {
       fd.append("category", product.category);
       fd.append("expiryDate", product.expiryDate);
       
-      if (product.price) fd.append("price", product.price);
+      if (product.price) {
+        const priceInUSD = convertLocalToUSD(parseFloat(product.price), currency);
+        fd.append("price", priceInUSD);
+      }
+
       if (product.weight) fd.append("weight", product.weight);
       
-      // Logic: If new file, send file. Else if URL string changed, send string. 
-      // If neither changed, backend keeps existing.
       if (file) {
         fd.append("image", file);
       } else if (product.image) {
@@ -85,7 +91,7 @@ const EditProduct = () => {
       }
 
       await productService.updateProduct(id, fd);
-      toast.success("Product updated successfully!");
+      toast.success(`Product updated!`);
       navigate("/products");
     } catch (err) {
       const msg = err.response?.data?.message || "Update failed.";
@@ -95,52 +101,58 @@ const EditProduct = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading product details...</div>;
+  if (loading) return <div className="p-8 text-center text-white">Loading product details...</div>;
+
+  // Styles
+  const inputStyle = "w-full p-3.5 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-[#38E07B] focus:ring-1 focus:ring-[#38E07B] outline-none transition-all";
+  const labelStyle = "block text-xs font-bold text-[#38E07B] uppercase tracking-wider mb-2";
 
   return (
     <div className="max-w-4xl mx-auto pb-12">
+      
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Link to="/products" className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition">
+        <Link to="/products" className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition border border-white/5">
            <FiArrowLeft size={24} />
         </Link>
         <div>
-           <h1 className="text-2xl font-bold text-gray-900">Edit Product</h1>
-           <p className="text-sm text-gray-500">Update details for {product.name}</p>
+           <h1 className="text-2xl font-bold text-white">Edit Product</h1>
+           <p className="text-sm text-gray-400">Update details for <span className="text-[#38E07B]">{product.name}</span></p>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
         <form onSubmit={handleSubmit} className="grid md:grid-cols-3 gap-0">
           
           {/* Left Column: Image Upload */}
-          <div className="p-8 bg-gray-50 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col items-center">
-             <div className="w-full aspect-square rounded-xl overflow-hidden bg-white border-2 border-dashed border-gray-300 flex items-center justify-center relative group mb-4">
+          <div className="p-8 border-b md:border-b-0 md:border-r border-white/10 flex flex-col items-center bg-black/20">
+             <div className="w-full aspect-square rounded-xl overflow-hidden bg-black/40 border-2 border-dashed border-white/10 flex items-center justify-center relative group mb-6">
                 {preview ? (
-                  <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                  <img src={preview} alt="Preview" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                 ) : (
-                  <div className="text-center text-gray-400">
+                  <div className="text-center text-gray-500">
                     <FiImage className="mx-auto text-4xl mb-2" />
                     <span className="text-sm">No Image</span>
                   </div>
                 )}
                 
-                {/* Overlay for file input */}
-                <label className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white font-semibold">
+                <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white font-bold text-sm">
                    Change Image
                    <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
                 </label>
              </div>
 
              <div className="w-full">
-                <p className="text-xs font-bold text-gray-400 uppercase mb-2">Or paste Image URL</p>
+                <p className="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-2">
+                  <FiLink /> Or paste Image URL
+                </p>
                 <input
                   type="url"
                   name="image"
                   value={product.image && !product.image.startsWith('/uploads') && !file ? product.image : ''}
                   onChange={handleChange}
                   placeholder="https://..."
-                  className="w-full p-2 text-sm bg-white border border-gray-200 rounded-lg outline-none focus:border-[#38E07B]"
+                  className={`${inputStyle} text-sm`}
                 />
              </div>
           </div>
@@ -148,93 +160,91 @@ const EditProduct = () => {
           {/* Right Column: Form Fields */}
           <div className="md:col-span-2 p-8 space-y-6">
              
-             <div className="space-y-4">
+             <div className="space-y-6">
                 <div>
-                   <label className="block text-sm font-bold text-gray-700 mb-1">Product Name</label>
+                   <label className={labelStyle}>Product Name</label>
                    <input
                       name="name"
                       value={product.name}
                       onChange={handleChange}
-                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#38E07B] focus:ring-0 outline-none transition"
+                      className={inputStyle}
                       required
                    />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Category</label>
+                      <label className={labelStyle}>Category</label>
                       <select
                         name="category"
                         value={product.category}
                         onChange={handleChange}
-                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#38E07B] outline-none cursor-pointer"
+                        className={`${inputStyle} appearance-none cursor-pointer`}
                       >
-                        <option value="Food">Food</option>
-                        <option value="Non-Food">Non-Food</option>
+                        <option value="Food" className="bg-[#122017]">Food</option>
+                        <option value="Non-Food" className="bg-[#122017]">Non-Food</option>
                       </select>
                    </div>
                    
                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Expiry Date</label>
-                      <div className="relative">
-                         <FiCalendar className="absolute left-3 top-3.5 text-gray-400" />
-                         <input
-                           type="date"
-                           name="expiryDate"
-                           value={product.expiryDate}
-                           onChange={handleChange}
-                           className="w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#38E07B] outline-none"
-                           required
-                         />
-                      </div>
+                      <label className={labelStyle}>Expiry Date</label>
+                      <input
+                        type="date"
+                        name="expiryDate"
+                        value={product.expiryDate}
+                        onChange={handleChange}
+                        className={inputStyle}
+                        required
+                        style={{ colorScheme: "dark" }}
+                      />
                    </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Price ($)</label>
+                      <label className={labelStyle}>Price ({currency})</label>
                       <div className="relative">
-                         <FiDollarSign className="absolute left-3 top-3.5 text-gray-400" />
+                         <span className="absolute left-4 top-3.5 text-gray-500 text-sm font-bold pointer-events-none">
+                           {currency}
+                         </span>
                          <input
                            type="number"
                            name="price"
                            value={product.price}
                            onChange={handleChange}
-                           className="w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#38E07B] outline-none"
+                           className={`${inputStyle} pl-16`}
                            placeholder="0.00"
+                           step="0.01"
                          />
                       </div>
                    </div>
 
                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Weight (g)</label>
-                      <div className="relative">
-                         <FiBox className="absolute left-3 top-3.5 text-gray-400" />
-                         <input
-                           type="number"
-                           name="weight"
-                           value={product.weight}
-                           onChange={handleChange}
-                           className="w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#38E07B] outline-none"
-                           placeholder="0"
-                         />
-                      </div>
+                      <label className={labelStyle}>Weight (g)</label>
+                      <input
+                        type="number"
+                        name="weight"
+                        value={product.weight}
+                        onChange={handleChange}
+                        className={inputStyle}
+                        placeholder="0"
+                      />
                    </div>
                 </div>
              </div>
 
-             <div className="pt-4 flex gap-3">
+             <div className="pt-6 flex gap-4 border-t border-white/10 mt-6">
                 <button 
                   type="submit"
                   disabled={saving} 
-                  className="flex-1 bg-[#38E07B] text-[#122017] font-bold py-3 rounded-xl hover:bg-[#2fc468] hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                  className="flex-1 bg-[#38E07B] text-[#122017] font-bold py-3.5 rounded-xl hover:bg-[#2fc468] hover:shadow-[0_0_20px_rgba(56,224,123,0.3)] transition-all flex items-center justify-center gap-2 disabled:opacity-70 active:scale-[0.98]"
                 >
                    {saving ? 'Saving...' : <><FiSave /> Save Changes</>}
                 </button>
                 <button 
                   type="button"
                   onClick={() => navigate('/products')}
-                  className="px-6 py-3 font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition"
+                  className="px-6 py-3.5 font-bold text-gray-400 bg-white/5 hover:bg-white/10 hover:text-white rounded-xl transition border border-white/10"
                 >
                    Cancel
                 </button>

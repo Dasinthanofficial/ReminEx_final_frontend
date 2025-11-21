@@ -9,7 +9,6 @@ const ManagePlans = () => {
   const [editingPlan, setEditingPlan] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
   
-  // Form state
   const [formData, setFormData] = useState({
     name: '',
     price: 0,
@@ -17,13 +16,11 @@ const ManagePlans = () => {
     features: ['']
   });
 
-  // 1. Fetch Plans
   const { data: plans, isLoading } = useQuery({
     queryKey: ['plans'],
     queryFn: () => api.get('/plans'),
   });
 
-  // 2. Update Mutation
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => api.put(`/plans/${id}`, data),
     onSuccess: () => {
@@ -34,7 +31,6 @@ const ManagePlans = () => {
     onError: (err) => toast.error(err.response?.data?.message || 'Update failed'),
   });
 
-  // 3. Create Mutation
   const createMutation = useMutation({
     mutationFn: (data) => api.post('/plans', data),
     onSuccess: () => {
@@ -46,7 +42,6 @@ const ManagePlans = () => {
     onError: (err) => toast.error(err.response?.data?.message || 'Creation failed'),
   });
 
-  // 4. Delete Mutation
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/plans/${id}`),
     onSuccess: () => {
@@ -54,8 +49,6 @@ const ManagePlans = () => {
       toast.success('Plan deleted');
     },
   });
-
-  // --- Handlers ---
 
   const handleInitDefaults = async () => {
     const defaults = [
@@ -115,73 +108,72 @@ const ManagePlans = () => {
     setFormData({ ...formData, features: newFeatures });
   };
 
-  // Render Card Content (Shared for Edit and Create)
   const renderForm = () => (
-    <div className="space-y-4">
+    <div className="space-y-4 text-white">
       <div>
-        <label className="block text-sm font-medium text-gray-700">Plan Name</label>
+        <label className="block text-xs font-bold text-[#38E07B] uppercase mb-1">Plan Name</label>
         <select 
           value={formData.name} 
           onChange={(e) => setFormData({...formData, name: e.target.value})}
-          className="w-full border rounded p-2"
+          className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-[#38E07B] outline-none appearance-none"
         >
           <option value="" disabled>Select Type</option>
-          <option value="Free">Free</option>
-          <option value="Monthly">Monthly</option>
-          <option value="Yearly">Yearly</option>
+          <option value="Free" className="bg-[#122017]">Free</option>
+          <option value="Monthly" className="bg-[#122017]">Monthly</option>
+          <option value="Yearly" className="bg-[#122017]">Yearly</option>
         </select>
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700">Price ($)</label>
+        <label className="block text-xs font-bold text-[#38E07B] uppercase mb-1">Price ($)</label>
         <input 
           type="number" 
           value={formData.price} 
           onChange={(e) => setFormData({...formData, price: Number(e.target.value)})}
-          className="w-full border rounded p-2"
+          className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-[#38E07B] outline-none"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Description</label>
+        <label className="block text-xs font-bold text-[#38E07B] uppercase mb-1">Description</label>
         <input 
           type="text" 
           value={formData.description} 
           onChange={(e) => setFormData({...formData, description: e.target.value})}
-          className="w-full border rounded p-2"
+          className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-[#38E07B] outline-none"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Features</label>
+        <label className="block text-xs font-bold text-[#38E07B] uppercase mb-2">Features</label>
         {formData.features.map((feat, idx) => (
           <div key={idx} className="flex gap-2 mb-2">
             <input 
               value={feat} 
               onChange={(e) => handleFeatureChange(idx, e.target.value)}
-              className="flex-1 border rounded p-2 text-sm"
+              className="flex-1 bg-black/40 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-[#38E07B] outline-none"
               placeholder="e.g. Unlimited Products"
             />
-            <button onClick={() => removeFeatureField(idx)} className="text-red-500 hover:text-red-700">
+            <button onClick={() => removeFeatureField(idx)} className="text-red-400 hover:text-red-500 p-2">
               <FiX />
             </button>
           </div>
         ))}
-        <button onClick={addFeatureField} type="button" className="text-sm text-blue-600 hover:underline">
+        <button onClick={addFeatureField} type="button" className="text-xs font-bold text-[#38E07B] hover:text-white uppercase tracking-wide mt-1">
           + Add Feature
         </button>
       </div>
 
-      <div className="flex gap-2 pt-4">
+      <div className="flex gap-3 pt-4">
         <button 
           onClick={() => handleSave(editingPlan)} 
-          className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700"
+          className="flex-1 bg-[#38E07B] text-[#122017] font-bold py-2 rounded-xl hover:bg-[#2fc468] transition flex items-center justify-center gap-2"
         >
-          <FiSave className="inline mr-2" /> Save
+          <FiSave /> Save
         </button>
         <button 
           onClick={() => { setIsCreating(false); setEditingPlan(null); }} 
-          className="flex-1 bg-gray-200 text-gray-800 py-2 rounded hover:bg-gray-300"
+          className="flex-1 bg-white/10 text-white font-bold py-2 rounded-xl hover:bg-white/20 transition"
         >
           Cancel
         </button>
@@ -189,50 +181,47 @@ const ManagePlans = () => {
     </div>
   );
 
-  if (isLoading) return <div className="p-8 text-center">Loading plans...</div>;
+  if (isLoading) return <div className="p-8 text-center text-white">Loading plans...</div>;
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 pb-12">
+      <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Manage Subscription Plans</h1>
-          <p className="text-gray-500 mt-1">Configure pricing and features for each plan</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Manage Plans</h1>
+          <p className="text-gray-400 text-sm mt-1">Configure pricing tiers and features.</p>
         </div>
         <button 
           onClick={startCreate}
-          className="bg-[#122017] text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-black transition"
+          className="bg-[#38E07B] text-[#122017] px-5 py-2.5 rounded-xl font-bold shadow-lg hover:bg-[#2fc468] transition flex items-center gap-2 text-sm"
         >
-          <FiPlus /> Add New Plan
+          <FiPlus size={18} /> New Plan
         </button>
       </div>
 
-      {/* Empty State */}
       {(!plans || plans.length === 0) && !isCreating && (
-        <div className="text-center py-16 bg-white rounded-xl border-2 border-dashed border-gray-300">
+        <div className="text-center py-16 bg-white/5 rounded-3xl border border-white/10 border-dashed">
           <div className="text-4xl mb-4">📭</div>
-          <h3 className="text-xl font-bold text-gray-800">No Plans Found</h3>
-          <p className="text-gray-500 mb-6">Initialize the database with default plans to get started.</p>
+          <h3 className="text-xl font-bold text-white">No Plans Found</h3>
+          <p className="text-gray-400 mb-6 text-sm">Initialize the database to get started.</p>
           <button 
             onClick={handleInitDefaults}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg"
+            className="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg text-sm"
           >
-            Initialize Defaults (Free, Monthly, Yearly)
+            Create Defaults
           </button>
         </div>
       )}
 
       <div className="grid md:grid-cols-3 gap-6">
-        {/* Creating New Plan Card */}
         {isCreating && (
-           <div className="bg-white p-6 rounded-xl shadow-xl border-2 border-blue-500 relative">
-             <div className="absolute -top-3 left-4 bg-blue-500 text-white text-xs px-2 py-1 rounded">Creating New</div>
+           <div className="bg-white/5 backdrop-blur-xl p-6 rounded-3xl border-2 border-[#38E07B] relative shadow-2xl">
+             <div className="absolute -top-3 left-6 bg-[#38E07B] text-[#122017] text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Creating New</div>
              {renderForm()}
            </div>
         )}
 
-        {/* Existing Plans */}
         {plans?.map(plan => (
-          <div key={plan._id} className={`bg-white p-6 rounded-xl shadow-sm border border-gray-200 relative ${editingPlan === plan._id ? 'ring-2 ring-green-500' : ''}`}>
+          <div key={plan._id} className={`bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-white/10 shadow-lg relative transition-all ${editingPlan === plan._id ? 'ring-2 ring-[#38E07B]' : 'hover:bg-white/10'}`}>
             
             {editingPlan === plan._id ? (
               renderForm()
@@ -240,27 +229,27 @@ const ManagePlans = () => {
               <>
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
-                    <div className="text-2xl font-bold text-green-600 mt-1">
+                    <h3 className="text-xl font-bold text-white">{plan.name}</h3>
+                    <div className="text-2xl font-bold text-[#38E07B] mt-1">
                       ${plan.price}<span className="text-sm text-gray-400 font-normal">/{plan.name === 'Yearly' ? 'yr' : 'mo'}</span>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                     <button onClick={() => startEdit(plan)} className="p-2 text-gray-500 hover:text-blue-600 bg-gray-50 rounded-lg">
+                     <button onClick={() => startEdit(plan)} className="p-2 text-gray-400 hover:text-white bg-white/5 rounded-lg transition">
                         <FiEdit />
                      </button>
-                     <button onClick={() => deleteMutation.mutate(plan._id)} className="p-2 text-gray-500 hover:text-red-600 bg-gray-50 rounded-lg">
+                     <button onClick={() => deleteMutation.mutate(plan._id)} className="p-2 text-gray-400 hover:text-red-400 bg-white/5 rounded-lg transition">
                         <FiTrash2 />
                      </button>
                   </div>
                 </div>
                 
-                <p className="text-gray-500 text-sm mb-4 min-h-[40px]">{plan.description}</p>
+                <p className="text-gray-400 text-sm mb-6 min-h-[40px] leading-relaxed">{plan.description}</p>
                 
-                <div className="space-y-2">
+                <div className="space-y-3 border-t border-white/10 pt-4">
                   {plan.features?.map((feat, i) => (
-                    <div key={i} className="flex items-center text-sm text-gray-600">
-                      <FiCheck className="text-green-500 mr-2 flex-shrink-0" />
+                    <div key={i} className="flex items-start text-sm text-gray-300">
+                      <FiCheck className="text-[#38E07B] mr-2 mt-0.5 flex-shrink-0" />
                       {feat}
                     </div>
                   ))}
@@ -271,14 +260,12 @@ const ManagePlans = () => {
         ))}
       </div>
 
-      {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-sm text-blue-800">
-        <h4 className="font-bold mb-2">Important Notes:</h4>
-        <ul className="list-disc list-inside space-y-1">
-          <li>Price changes will only affect new subscriptions</li>
-          <li>Existing subscribers will keep their current pricing</li>
-          <li>Feature changes are applied immediately to all users</li>
-          <li>Stripe webhook must be configured for payment processing</li>
+      <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6">
+        <h4 className="font-bold text-blue-400 text-sm uppercase tracking-wider mb-2">System Notice</h4>
+        <ul className="text-sm text-gray-400 space-y-1 list-disc list-inside">
+          <li>Price updates only apply to new subscriptions.</li>
+          <li>Feature updates propagate immediately.</li>
+          <li>Stripe products must match these IDs for checkout flow.</li>
         </ul>
       </div>
     </div>

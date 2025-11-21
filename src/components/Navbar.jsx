@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FiMenu, FiX, FiUser, FiLogOut, FiSettings, FiChevronDown, FiGrid } from 'react-icons/fi';
+import { getCurrencyList } from '../utils/currencyHelper'; // 👈 Import Helper
+import { FiMenu, FiX, FiLogOut, FiSettings, FiChevronDown, FiGrid, FiGlobe } from 'react-icons/fi'; // 👈 Import Globe
 import { motion, AnimatePresence } from 'framer-motion';
 import Logo from '../assets/logo.png';
 
@@ -9,13 +10,28 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { user, logout, isAuthenticated, isAdmin } = useAuth();
+  
+  // 1. Get Currency props from Auth
+  const { user, logout, isAuthenticated, isAdmin, currency, changeCurrency } = useAuth();
+  
+  // 2. Local state for the list of currencies
+  const [currencies, setCurrencies] = useState(["USD"]);
+
   const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    // 3. Fetch currency list (delayed slightly to ensure API cache is ready)
+    const timer = setTimeout(() => {
+      setCurrencies(getCurrencyList());
+    }, 1000);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(timer);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -62,6 +78,20 @@ const Navbar = () => {
             <NavLink to="/" className={navLinkStyle} end>Home</NavLink>
             <NavLink to="/about" className={navLinkStyle}>About</NavLink>
             <NavLink to="/plans" className={navLinkStyle}>Pricing</NavLink>
+
+            {/* 🌍 GLOBAL CURRENCY SELECTOR (DESKTOP) */}
+            <div className="ml-2 flex items-center gap-1 bg-white/10 px-2 py-1 rounded-lg border border-white/10 hover:border-[#38E07B]/50 transition-colors">
+                <FiGlobe className="text-[#38E07B] text-xs" />
+                <select 
+                    value={currency} 
+                    onChange={(e) => changeCurrency(e.target.value)}
+                    className="bg-transparent text-xs font-bold text-white outline-none cursor-pointer appearance-none w-10 uppercase"
+                >
+                    {currencies.map(c => (
+                        <option key={c} value={c} className="text-black">{c}</option>
+                    ))}
+                </select>
+            </div>
 
             {isAuthenticated ? (
               <div className="flex items-center gap-4 ml-6 pl-6 border-l border-white/10">
@@ -169,6 +199,19 @@ const Navbar = () => {
             className="md:hidden bg-[#122017]/95 backdrop-blur-xl border-b border-white/10 overflow-hidden"
           >
             <div className="px-6 py-8 space-y-4">
+              
+              {/* 🌍 MOBILE CURRENCY SELECTOR */}
+              <div className="flex justify-between items-center text-gray-300 pb-4 border-b border-white/10">
+                  <span className="flex items-center gap-2"><FiGlobe className="text-[#38E07B]" /> Currency:</span>
+                  <select 
+                    value={currency} 
+                    onChange={(e) => changeCurrency(e.target.value)}
+                    className="bg-white/10 text-white p-2 rounded border border-white/20 text-sm outline-none"
+                  >
+                    {currencies.map(c => <option key={c} value={c} className="text-black">{c}</option>)}
+                  </select>
+              </div>
+
               <NavLink to="/" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">Home</NavLink>
               <NavLink to="/about" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">About</NavLink>
               <NavLink to="/plans" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">Pricing</NavLink>

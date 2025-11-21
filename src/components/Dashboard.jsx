@@ -1,325 +1,287 @@
-// src/pages/Dashboard.jsx
 import { useEffect, useState } from "react";
-import api from "../services/api"; // ✅ shared axios instance
-import { LoadingSpinner } from "../components/LoadingSpinner";
-import { ProductCard } from "../components/ProductCard";
-import { Modal } from "../components/Modal";
-import { Toast } from "../components/Toast";
-import { formatDate } from "../utils/formatDate";
+import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiPlus, FiTrash2, FiPackage, FiCalendar, FiTrendingUp, FiX } from "react-icons/fi";
+import { formatPrice } from "../utils/currencyHelper";
+import toast from "react-hot-toast";
+
+const LoadingSpinner = () => (
+  <div className="flex justify-center items-center h-64">
+    <div className="w-12 h-12 border-4 border-[#38E07B] border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
 
 export const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, currency } = useAuth();
   const [userInfo, setUserInfo] = useState(null);
   const [products, setProducts] = useState([]);
-  const [loadingUser, setLoadingUser] = useState(true);
-  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [toast, setToast] = useState(null);
 
-  // Load user profile
-  const fetchUserData = async () => {
+  const fetchData = async () => {
     try {
-      // backend: /api/user/dashboard
-      const data = await api.get("/user/dashboard");
-      setUserInfo(data);
+      const [userData, prodData] = await Promise.all([
+        api.get("/user/dashboard"),
+        api.get("/products")
+      ]);
+      setUserInfo(userData.data);
+      setProducts(Array.isArray(prodData.data) ? prodData.data : []);
     } catch (e) {
-      setToast({
-        message: e.response?.data?.message || "Failed to load user data",
-        type: "error",
-      });
-      console.error(e);
-    } finally {
-      setLoadingUser(false);
-    }
-  };
-
-  // Load products
-  const loadProducts = async () => {
-    setLoadingProducts(true);
-    try {
-      // backend: /api/products
-      const data = await api.get("/products");
-      setProducts(Array.isArray(data) ? data : []);
-    } catch (e) {
-      setToast({
-        message: e.response?.data?.message || "Failed to load products",
-        type: "error",
-      });
-      setProducts([]);
-    } finally {
-      setLoadingProducts(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUserData();
-    loadProducts();
-  }, []);
-
-  // Add product handler – JSON body (no file upload here)
-  const handleAddProduct = async (product) => {
-    try {
-      await api.post("/products", product);
-      setToast({ message: "Product added!", type: "success" });
-      setShowAddModal(false);
-      loadProducts();
-    } catch (e) {
-      setToast({
-        message: e.response?.data?.message || "Failed to add product",
-        type: "error",
-      });
-    }
-  };
-
-  // Delete product
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this product?")) return;
-    try {
-      await api.delete(`/products/${id}`);
-      setToast({ message: "Product deleted", type: "success" });
-      loadProducts();
-    } catch (e) {
-      setToast({
-        message: e.response?.data?.message || "Delete failed",
-        type: "error",
-      });
-    }
-  };
-
-  if (loadingUser) {
-    return <LoadingSpinner />;
-  }
-
-  // Currently unused, you can remove if not needed
-  const isPremium = user?.plan === "Monthly" || user?.plan === "Yearly";
-
-  return (
-    <div className="max-w-7xl mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">
-        Welcome, {userInfo?.name}!
-      </h1>
-
-      {/* Profile summary */}
-      <section className="bg-white p-4 rounded-lg shadow mb-6">
-        <p className="text-gray-700">
-          <strong>Plan:</strong> {userInfo?.plan}
-          {userInfo?.planExpiry && (
-            <span className="ml-2 text-sm">
-              (expires {formatDate(userInfo.planExpiry)})
-            </span>
-          )}
-        </p>
-        <p className="text-gray-700">
-          <strong>Products stored:</strong>{" "}
-          {userInfo?.productCount || 0}
-          {userInfo?.plan === "Free" && " / 5"}
-        </p>
-        {userInfo?.plan === "Free" && (
-          <Link
-            to="/plans"
-            className="inline-block mt-2 text-indigo-600 hover:underline"
-          >
-            Upgrade to Premium
-          </Link>
-        )}
-      </section>
-
-      {/* Add product button */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold">Your Products</h2>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
-        >
-          + Add Product
-        </button>
-      </div>
-
-      {/* Product list */}
-      {loadingProducts ? (
-        <LoadingSpinner />
-      ) : products.length > 0 ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {products.map((product) => (
-            <ProductCard
-              key={product._id}
-              product={product}
-              onDelete={() => handleDelete(product._id)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <p className="text-gray-500">
-            No products found. Add some to get started!
-          </p>
-        </div>
-      )}
-
-      {/* Add product modal */}
-      {showAddModal && (
-        <Modal
-          onClose={() => setShowAddModal(false)}
-          title="Add New Product"
-        >
-          <AddProductForm
-            onSubmit={handleAddProduct}
-            onCancel={() => setShowAddModal(false)}
-          />
-        </Modal>
-      )}
-
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
-    </div>
-  );
-};
-
-// AddProductForm component
-function AddProductForm({ onSubmit, onCancel }) {
-  const [form, setForm] = useState({
-    name: "",
-    category: "Food",
-    expiryDate: new Date().toISOString().split("T")[0],
-    price: "",
-    weight: "",
-    image: "",
-  });
-  const [loading, setLoading] = useState(false);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await onSubmit(form);
+      toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleAddProduct = async (formData) => {
+    try {
+      await api.post("/products", formData);
+      toast.success("Product added successfully!");
+      setShowAddModal(false);
+      fetchData();
+    } catch (e) {
+      toast.error("Failed to add product");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this product?")) return;
+    try {
+      await api.delete(`/products/${id}`);
+      toast.success("Product deleted");
+      fetchData();
+    } catch (e) {
+      toast.error("Delete failed");
+    }
+  };
+
+  if (loading) return <LoadingSpinner />;
+
+  const totalValue = products.reduce((sum, p) => sum + (p.price || 0), 0);
+  const expiringSoon = products.filter(p => {
+    const days = (new Date(p.expiryDate) - new Date()) / (1000 * 60 * 60 * 24);
+    return days > 0 && days <= 7;
+  }).length;
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-4"
-    >
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Product Name
-        </label>
-        <input
-          type="text"
-          name="name"
-          value={form.name}
-          onChange={handleChange}
-          required
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-        />
+    <div className="min-h-screen bg-[#122017] text-white p-6 md:p-10 font-sans relative overflow-hidden">
+      
+      {/* 🌌 Background Glow */}
+      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-[#38E07B]/10 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px]"></div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Category
-        </label>
-        <select
-          name="category"
-          value={form.category}
-          onChange={handleChange}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-        >
-          <option value="Food">Food</option>
-          <option value="Non-Food">Non-Food</option>
-        </select>
+      <div className="relative z-10 max-w-7xl mx-auto">
+        
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold mb-1">Hello, <span className="text-[#38E07B]">{user?.name}</span>! 👋</h1>
+            <p className="text-gray-400 text-sm">Here's an overview of your inventory.</p>
+          </div>
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="bg-[#38E07B] text-[#122017] px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-[#2fc468] transition-all flex items-center gap-2"
+          >
+            <FiPlus /> Add Product
+          </button>
+        </div>
+
+        {/* 📊 Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <StatCard 
+            title="Total Products" 
+            value={products.length} 
+            icon={<FiPackage />} 
+            color="bg-blue-500/20 text-blue-400"
+          />
+          <StatCard 
+            title="Expiring Soon" 
+            value={expiringSoon} 
+            icon={<FiCalendar />} 
+            color="bg-yellow-500/20 text-yellow-400"
+          />
+          <StatCard 
+            title="Total Value" 
+            value={formatPrice(totalValue, currency)} 
+            icon={<FiTrendingUp />} 
+            color="bg-[#38E07B]/20 text-[#38E07B]"
+          />
+        </div>
+
+        {/* 📋 Product List */}
+        <h2 className="text-2xl font-bold mb-6 text-white">Recent Inventory</h2>
+        
+        {products.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <ProductCard 
+                key={product._id} 
+                product={product} 
+                currency={currency}
+                onDelete={() => handleDelete(product._id)} 
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-md">
+            <p className="text-gray-400 text-lg">No products found. Start adding some!</p>
+          </div>
+        )}
+
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Expiry Date
-        </label>
-        <input
-          type="date"
-          name="expiryDate"
-          value={form.expiryDate}
-          onChange={handleChange}
-          required
-          min={new Date().toISOString().split("T")[0]}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-        />
-      </div>
+      {/* ➕ Add Product Modal */}
+      <AnimatePresence>
+        {showAddModal && (
+          <AddProductModal 
+            onClose={() => setShowAddModal(false)} 
+            onSubmit={handleAddProduct} 
+          />
+        )}
+      </AnimatePresence>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Price (optional)
-        </label>
-        <input
-          type="number"
-          name="price"
-          value={form.price}
-          onChange={handleChange}
-          min="0"
-          step="0.01"
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Weight (g) (optional)
-        </label>
-        <input
-          type="number"
-          name="weight"
-          value={form.weight}
-          onChange={handleChange}
-          min="0"
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Image URL (optional)
-        </label>
-        <input
-          type="url"
-          name="image"
-          value={form.image}
-          onChange={handleChange}
-          placeholder="https://example.com/image.jpg"
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-        />
-      </div>
-
-      <div className="flex justify-end space-x-3 pt-4">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-          disabled={loading}
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-300"
-        >
-          {loading ? "Saving..." : "Save Product"}
-        </button>
-      </div>
-    </form>
+    </div>
   );
-}
+};
+
+// 🧱 Sub-Components
+
+const StatCard = ({ title, value, icon, color }) => (
+  <motion.div 
+    whileHover={{ y: -5 }}
+    className="bg-white/5 border border-white/10 backdrop-blur-xl p-6 rounded-3xl shadow-lg flex items-center gap-4"
+  >
+    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${color}`}>
+      {icon}
+    </div>
+    <div>
+      <p className="text-gray-400 text-sm uppercase font-bold tracking-wider">{title}</p>
+      <h3 className="text-2xl font-bold text-white">{value}</h3>
+    </div>
+  </motion.div>
+);
+
+const ProductCard = ({ product, onDelete, currency }) => (
+  <motion.div 
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    whileHover={{ scale: 1.02 }}
+    className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-3xl p-5 shadow-lg relative group overflow-hidden"
+  >
+    <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+      <button onClick={onDelete} className="bg-red-500/20 text-red-400 p-2 rounded-full hover:bg-red-500 hover:text-white transition-all">
+        <FiTrash2 />
+      </button>
+    </div>
+
+    <div className="h-40 bg-white/5 rounded-2xl mb-4 overflow-hidden relative">
+      {product.image ? (
+        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-4xl">
+          {product.category === 'Food' ? '🥗' : '📦'}
+        </div>
+      )}
+      <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded-lg backdrop-blur-md">
+        {product.category}
+      </span>
+    </div>
+
+    <h3 className="text-lg font-bold text-white truncate">{product.name}</h3>
+    <div className="flex justify-between items-end mt-2">
+      <div>
+        <p className="text-xs text-gray-400">Expires</p>
+        <p className="text-sm font-medium text-gray-200">
+          {new Date(product.expiryDate).toLocaleDateString()}
+        </p>
+      </div>
+      {product.price && (
+        <div className="bg-[#38E07B]/20 text-[#38E07B] px-3 py-1 rounded-lg text-sm font-bold">
+          {formatPrice(product.price, currency)}
+        </div>
+      )}
+    </div>
+  </motion.div>
+);
+
+const AddProductModal = ({ onClose, onSubmit }) => {
+  const [form, setForm] = useState({ name: "", category: "Food", expiryDate: "", price: "" });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <motion.div 
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 50 }}
+        className="bg-[#1a2c23] border border-white/10 w-full max-w-md p-8 rounded-3xl shadow-2xl relative overflow-hidden"
+      >
+        {/* Glow effect inside modal */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[#38E07B]/10 rounded-full blur-[50px] pointer-events-none"></div>
+
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+          <FiX size={24} />
+        </button>
+        
+        <h2 className="text-2xl font-bold mb-6 text-white">Add New Item</h2>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-bold uppercase text-gray-500 ml-1">Name</label>
+            <input 
+              placeholder="Product Name" 
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white focus:border-[#38E07B] outline-none mt-1"
+              onChange={(e) => setForm({...form, name: e.target.value})}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-bold uppercase text-gray-500 ml-1">Category</label>
+              <select 
+                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-gray-300 focus:border-[#38E07B] outline-none mt-1"
+                onChange={(e) => setForm({...form, category: e.target.value})}
+              >
+                <option value="Food">Food</option>
+                <option value="Non-Food">Non-Food</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase text-gray-500 ml-1">Price</label>
+              <input 
+                type="number" 
+                placeholder="Price" 
+                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white focus:border-[#38E07B] outline-none mt-1"
+                onChange={(e) => setForm({...form, price: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold uppercase text-gray-500 ml-1">Expiry Date</label>
+            <input 
+              type="date" 
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-gray-300 focus:border-[#38E07B] outline-none mt-1"
+              onChange={(e) => setForm({...form, expiryDate: e.target.value})}
+            />
+          </div>
+          
+          <button 
+            onClick={() => onSubmit(form)}
+            className="w-full bg-[#38E07B] text-[#122017] font-bold py-3 rounded-xl hover:bg-[#2fc468] transition mt-4"
+          >
+            Save Product
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 export default Dashboard;

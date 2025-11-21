@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { FiCheckCircle, FiLoader, FiXCircle } from 'react-icons/fi';
+import { FiCheckCircle, FiLoader, FiXCircle, FiArrowRight, FiPlus } from 'react-icons/fi';
+import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import api from '../services/api'; // ✅ Import API
-import { useAuth } from '../context/AuthContext'; // ✅ Import Auth
+import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const navigate = useNavigate();
-  const { updateUser } = useAuth(); // ✅ Get function to update local user data
+  const { updateUser } = useAuth();
   
   const [status, setStatus] = useState('loading'); // loading | success | error
 
@@ -21,11 +22,9 @@ const PaymentSuccess = () => {
       }
 
       try {
-        // 1. Call backend to confirm payment and update DB
         const res = await api.get(`/payment/verify?sessionId=${sessionId}`);
 
         if (res.success) {
-          // 2. Update local user context so UI shows "Premium" immediately
           updateUser((prev) => ({
             ...prev,
             plan: res.plan,
@@ -34,7 +33,6 @@ const PaymentSuccess = () => {
 
           setStatus('success');
           
-          // 3. Trigger Confetti
           confetti({
             particleCount: 150,
             spread: 70,
@@ -57,25 +55,27 @@ const PaymentSuccess = () => {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center text-center">
-        <FiLoader className="text-[#38E07B] text-6xl animate-spin mb-4" />
-        <h2 className="text-2xl font-bold text-gray-800">Verifying Payment...</h2>
-        <p className="text-gray-500 mt-2">Please wait while we update your account.</p>
+      <div className="min-h-[80vh] flex flex-col items-center justify-center text-center text-white">
+        <FiLoader className="text-[#38E07B] text-6xl animate-spin mb-6" />
+        <h2 className="text-3xl font-bold tracking-tight">Verifying Payment...</h2>
+        <p className="text-gray-400 mt-2 text-sm">Please wait while we update your account.</p>
       </div>
     );
   }
 
   if (status === 'error') {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center text-center">
-        <FiXCircle className="text-red-500 text-6xl mb-4" />
-        <h2 className="text-2xl font-bold text-gray-800">Verification Failed</h2>
-        <p className="text-gray-500 mt-2 mb-6">
-          We couldn't verify the payment session. Please contact support.
+      <div className="min-h-[80vh] flex flex-col items-center justify-center text-center text-white">
+        <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6 border border-red-500/20 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+           <FiXCircle className="text-red-500 text-5xl" />
+        </div>
+        <h2 className="text-3xl font-bold tracking-tight">Verification Failed</h2>
+        <p className="text-gray-400 mt-2 mb-8 max-w-md leading-relaxed">
+          We couldn't verify the payment session. Please contact support if you were charged.
         </p>
         <Link
           to="/dashboard"
-          className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition"
+          className="bg-white/10 border border-white/10 text-white px-8 py-3 rounded-xl hover:bg-white/20 transition font-bold text-sm"
         >
           Return to Dashboard
         </Link>
@@ -84,49 +84,62 @@ const PaymentSuccess = () => {
   }
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+    <div className="min-h-[80vh] flex items-center justify-center p-6">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="text-center max-w-lg w-full"
+      >
+        <div className="w-24 h-24 bg-[#38E07B]/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-[#38E07B]/20 shadow-[0_0_40px_rgba(56,224,123,0.2)]">
           <FiCheckCircle className="text-[#38E07B] text-5xl" />
         </div>
         
-        <h1 className="text-4xl font-bold mb-4 text-gray-900">Payment Successful!</h1>
-        <p className="text-xl text-gray-600 mb-8">
+        <h1 className="text-4xl font-extrabold mb-4 text-white tracking-tight">Payment Successful!</h1>
+        <p className="text-lg text-gray-400 mb-10 leading-relaxed">
           Welcome to Premium! Your subscription has been activated.
         </p>
         
-        <div className="bg-gray-50 rounded-xl border border-gray-200 p-6 mb-8 max-w-md mx-auto">
-          <h3 className="font-semibold mb-3 text-gray-800">Your New Powers:</h3>
-          <ul className="text-left space-y-3 text-gray-600">
-            <li className="flex items-center gap-2">✅ <span>Unlimited Product Storage</span></li>
-            <li className="flex items-center gap-2">✅ <span>AI Chef Recipe Suggestions</span></li>
-            <li className="flex items-center gap-2">✅ <span>Detailed Monthly Reports</span></li>
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 mb-10 text-left shadow-2xl">
+          <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Your New Powers</h3>
+          <ul className="space-y-4">
+            <FeatureItem text="Unlimited Product Storage" />
+            <FeatureItem text="AI Chef Recipe Suggestions" />
+            <FeatureItem text="Detailed Monthly Reports" />
           </ul>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col gap-4">
           <Link
             to="/dashboard"
-            className="bg-[#38E07B] text-[#122017] font-bold px-8 py-3 rounded-xl hover:bg-[#2fc468] transition shadow-lg shadow-green-900/20"
+            className="w-full bg-[#38E07B] text-[#122017] font-bold py-4 rounded-xl hover:bg-[#2fc468] transition shadow-lg shadow-[#38E07B]/20 flex items-center justify-center gap-2 group"
           >
-            Go to Dashboard
+            Go to Dashboard <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link
             to="/products/add"
-            className="bg-white border border-gray-300 text-gray-700 font-semibold px-8 py-3 rounded-xl hover:bg-gray-50 transition"
+            className="w-full bg-white/5 border border-white/10 text-white font-bold py-4 rounded-xl hover:bg-white/10 transition flex items-center justify-center gap-2"
           >
-            Add First Product
+            <FiPlus /> Add First Product
           </Link>
         </div>
         
         {sessionId && (
-          <p className="text-xs text-gray-400 mt-8 font-mono">
-            ID: {sessionId.slice(0, 10)}...
+          <p className="text-[10px] text-gray-600 mt-8 font-mono uppercase tracking-widest">
+            Ref: {sessionId.slice(0, 16)}...
           </p>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 };
+
+const FeatureItem = ({ text }) => (
+  <li className="flex items-center gap-3 text-gray-300 font-medium">
+    <div className="w-5 h-5 rounded-full bg-[#38E07B]/20 flex items-center justify-center text-[#38E07B]">
+      <FiCheckCircle size={12} />
+    </div>
+    {text}
+  </li>
+);
 
 export default PaymentSuccess;

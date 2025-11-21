@@ -9,13 +9,11 @@ const AdminUsers = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch Users
   const { data: users, isLoading } = useQuery({
     queryKey: ['adminUsers'],
     queryFn: () => api.get('/admin/users'),
   });
 
-  // Delete User Mutation
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/admin/users/${id}`),
     onSuccess: () => {
@@ -33,33 +31,35 @@ const AdminUsers = () => {
     }
   };
 
-  // Filter users based on search
   const filteredUsers = users?.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (isLoading) return <div className="p-8 text-center">Loading users...</div>;
+  if (isLoading) return <div className="p-8 text-center text-white">Loading users...</div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
+    <div className="space-y-8">
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">User Management</h1>
+          <p className="text-gray-400 text-sm mt-1">Manage system access and roles.</p>
+        </div>
         <div className="relative">
           <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input 
             type="text" 
             placeholder="Search users..." 
-            className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+            className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:border-[#38E07B] outline-none text-white placeholder-gray-500 transition-colors w-64"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-lg">
         <table className="w-full text-left">
-          <thead className="bg-gray-50 text-gray-600 uppercase text-xs font-semibold">
+          <thead className="bg-white/5 text-gray-400 uppercase text-[10px] font-bold tracking-wider">
             <tr>
               <th className="px-6 py-4">User</th>
               <th className="px-6 py-4">Role</th>
@@ -68,38 +68,48 @@ const AdminUsers = () => {
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-white/5">
             {filteredUsers?.map((user) => (
-              <tr key={user._id} className="hover:bg-gray-50 transition">
+              <tr key={user._id} className="hover:bg-white/[0.02] transition">
                 <td className="px-6 py-4">
                   <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 mr-3">
-                      <FiUser />
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#38E07B] to-emerald-900 p-[2px]">
+                      <div className="w-full h-full rounded-full bg-[#122017] flex items-center justify-center text-white font-bold text-sm">
+                        {user.name.charAt(0)}
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-medium text-gray-900">{user.name}</div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
+                    <div className="ml-3">
+                      <div className="font-bold text-white text-sm">{user.name}</div>
+                      <div className="text-xs text-gray-500">{user.email}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`px-2 py-1 text-xs rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>
+                  <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded-lg border ${
+                    user.role === 'admin' 
+                      ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' 
+                      : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                  }`}>
                     {user.role}
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`px-2 py-1 text-xs rounded-full ${user.plan === 'Free' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                  <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded-lg border ${
+                    user.plan === 'Free' 
+                      ? 'bg-gray-500/20 text-gray-400 border-gray-500/30' 
+                      : 'bg-[#38E07B]/20 text-[#38E07B] border-[#38E07B]/30'
+                  }`}>
                     {user.plan}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
+                <td className="px-6 py-4 text-xs text-gray-400 font-mono">
                   {format(new Date(user.createdAt), 'MMM dd, yyyy')}
                 </td>
                 <td className="px-6 py-4 text-right">
                   {user.role !== 'admin' && (
                     <button 
                       onClick={() => handleDelete(user._id)}
-                      className="text-red-400 hover:text-red-600 p-2 rounded-full hover:bg-red-50"
+                      className="text-red-400 hover:text-white hover:bg-red-500 p-2 rounded-lg transition-all"
                     >
                       <FiTrash2 />
                     </button>
@@ -110,7 +120,7 @@ const AdminUsers = () => {
           </tbody>
         </table>
         {filteredUsers?.length === 0 && (
-          <div className="p-8 text-center text-gray-500">No users found.</div>
+          <div className="p-12 text-center text-gray-500">No users found matching your search.</div>
         )}
       </div>
     </div>
