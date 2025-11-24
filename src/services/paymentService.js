@@ -1,9 +1,8 @@
 import api from './api';
 
 export const paymentService = {
-  createCheckoutSession: (planId) => 
-    api.post('/payment/checkout', { planId }),
-  
+  createCheckoutSession: (planId, currency = "USD") =>
+    api.post('/payment/checkout', { planId, currency }),
+
   getPlans: () => api.get('/plans'),
 };
-

@@ -13,18 +13,19 @@ const Plans = () => {
   const { user, isAuthenticated, currency, changeCurrency } = useAuth();
   const navigate = useNavigate();
   const [currencyList, setCurrencyList] = useState(["USD"]);
+  const [loadingPlan, setLoadingPlan] = useState(null);
 
+  // Fetch plans
   const { data: plans, isLoading } = useQuery({
     queryKey: ['plans'],
     queryFn: paymentService.getPlans,
   });
 
   useEffect(() => {
-    setTimeout(() => {
-      setCurrencyList(getCurrencyList());
-    }, 500);
+    setTimeout(() => setCurrencyList(getCurrencyList()), 500);
   }, []);
 
+  // FIXED CHECKOUT FUNCTION
   const handleSubscribe = async (planId, planName) => {
     if (!isAuthenticated) {
       toast.error('Please login to subscribe');
@@ -38,16 +39,33 @@ const Plans = () => {
     }
 
     try {
-      const { data } = await api.post('/payment/checkout', { 
-        planId, 
-        currency 
+      setLoadingPlan(planId);
+
+      const response = await api.post('/payment/checkout', {
+        planId,
+        currency,
       });
-      
-      if (data.url) {
-        window.location.href = data.url;
+
+      console.log("🔍 Stripe checkout response:", response);
+
+      // Axios interceptor returns ONLY response.data
+      if (response?.url) {
+        window.location.href = response.url;
+        return;
       }
+
+      toast.error("Stripe did not return a checkout URL.");
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create checkout session');
+      console.error("❌ Checkout Error:", error);
+
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to create checkout session";
+
+      toast.error(msg);
+    } finally {
+      setLoadingPlan(null);
     }
   };
 
@@ -94,21 +112,17 @@ const Plans = () => {
 
   return (
     <div className="relative min-h-screen bg-[#122017] overflow-hidden font-sans selection:bg-[#38E07B] selection:text-[#122017] py-20 px-6">
-      
-      {/* 🌌 Ambient Background Blobs */}
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#38E07B]/20 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[150px] translate-x-1/3 translate-y-1/3 pointer-events-none"></div>
 
-      {/* 🌍 Currency Dropdown Pill */}
+      {/* 🌍 Currency Dropdown */}
       <div className="absolute top-6 right-6 z-30">
         <div className="flex items-center gap-2 bg-white/5 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full shadow-2xl hover:bg-white/10 transition-all group cursor-pointer">
           <FiGlobe className="text-[#38E07B] group-hover:rotate-180 transition-transform duration-500" />
-          <select 
-            value={currency} 
+          <select
+            value={currency}
             onChange={(e) => changeCurrency(e.target.value)}
             className="bg-transparent text-sm font-bold text-white outline-none cursor-pointer appearance-none uppercase w-12 text-center"
           >
-            {currencyList.map(c => (
+            {currencyList.map((c) => (
               <option key={c} value={c} className="text-black">{c}</option>
             ))}
           </select>
@@ -118,7 +132,7 @@ const Plans = () => {
 
       {/* Header */}
       <div className="relative z-10 text-center mb-16 max-w-3xl mx-auto">
-        <motion.h1 
+        <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight text-white"
@@ -128,13 +142,13 @@ const Plans = () => {
             Pricing
           </span>
         </motion.h1>
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
           className="text-xl text-gray-400 leading-relaxed"
         >
-          Choose the perfect plan for your kitchen. <br className="hidden md:block"/> No hidden fees. Cancel anytime.
+          Choose the perfect plan for your kitchen. <br className="hidden md:block" /> No hidden fees. Cancel anytime.
         </motion.p>
       </div>
 
@@ -143,7 +157,7 @@ const Plans = () => {
         {plans?.map((plan, idx) => {
           const isCurrentPlan = user?.plan === plan.name;
           const isPro = plan.name === 'Yearly';
-          
+
           return (
             <motion.div
               key={plan._id}
@@ -151,20 +165,20 @@ const Plans = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
               className={`group relative flex flex-col p-8 rounded-[2.5rem] transition-all duration-500 hover:-translate-y-2
-                ${isPro 
-                  ? 'bg-gradient-to-b from-white/10 to-white/5 border-[#38E07B]/50 shadow-[0_0_50px_-12px_rgba(56,224,123,0.3)]' 
+                ${isPro
+                  ? 'bg-gradient-to-b from-white/10 to-white/5 border-[#38E07B]/50 shadow-[0_0_50px_-12px_rgba(56,224,123,0.3)]'
                   : 'bg-white/5 border-white/10 hover:bg-white/[0.07]'
-                } border backdrop-blur-xl`
-              }
+                } border backdrop-blur-xl`}
             >
-              {/* Most Popular Badge */}
+
+              {/* Badge */}
               {isPro && (
                 <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-[#38E07B] text-[#122017] px-6 py-2 rounded-full text-xs font-extrabold uppercase tracking-wider shadow-[0_0_20px_rgba(56,224,123,0.4)] flex items-center gap-2">
                   <FiStar className="fill-current" /> Most Popular
                 </div>
               )}
 
-              {/* Card Content */}
+              {/* Card Body */}
               <div className="mb-8">
                 <h3 className="text-lg font-bold text-gray-400 uppercase tracking-widest mb-4">{plan.name}</h3>
                 <div className="flex items-baseline gap-1">
@@ -188,8 +202,8 @@ const Plans = () => {
                 {planFeatures[plan.name]?.map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
                     <div className={`mt-1 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 
-                      ${feature.included 
-                        ? 'bg-[#38E07B]/20 text-[#38E07B]' 
+                      ${feature.included
+                        ? 'bg-[#38E07B]/20 text-[#38E07B]'
                         : 'bg-white/5 text-gray-500'
                       }`}
                     >
@@ -202,10 +216,10 @@ const Plans = () => {
                 ))}
               </ul>
 
-              {/* CTA Button */}
+              {/* Button */}
               <button
                 onClick={() => handleSubscribe(plan._id, plan.name)}
-                disabled={isCurrentPlan}
+                disabled={isCurrentPlan || loadingPlan === plan._id}
                 className={`w-full py-4 rounded-2xl font-bold text-sm tracking-wide transition-all duration-300
                   ${isCurrentPlan
                     ? 'bg-white/10 text-gray-500 cursor-not-allowed border border-white/5'
@@ -215,17 +229,27 @@ const Plans = () => {
                   }
                 `}
               >
-                {isCurrentPlan 
-                  ? 'Current Plan' 
-                  : plan.name === "Free" 
-                    ? "Get Started Free" 
-                    : `Subscribe in ${currency}`
-                }
+                {loadingPlan === plan._id
+                  ? "Processing..."
+                  : isCurrentPlan
+                    ? 'Current Plan'
+                    : plan.name === "Free"
+                      ? "Get Started Free"
+                      : "Start 7-Day Free Trial"}
               </button>
+
+              {/* Pricing Note */}
+              {!isCurrentPlan && plan.name !== "Free" && (
+                <p className="text-[10px] text-center mt-2 text-gray-400">
+                  Then {formatPrice(plan.price, currency)}/{plan.name === 'Yearly' ? 'yr' : 'mo'}
+                </p>
+              )}
+
             </motion.div>
           );
         })}
       </div>
+
     </div>
   );
 };
