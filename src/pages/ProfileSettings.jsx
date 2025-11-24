@@ -1,9 +1,13 @@
+
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { FiSave, FiCamera, FiUser, FiMail, FiShield } from "react-icons/fi";
+import { FiSave, FiCamera, FiUser, FiMail, FiShield, FiCreditCard, FiCalendar, FiCheckCircle } from "react-icons/fi";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
+import { format } from "date-fns"; // 👈 Import date formatter
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -62,6 +66,12 @@ const ProfileSettings = () => {
     }
   };
 
+  // Helper to format date safely
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return format(new Date(dateString), "MMMM dd, yyyy");
+  };
+
   return (
     <div className="max-w-5xl mx-auto pb-12 relative">
       
@@ -73,7 +83,7 @@ const ProfileSettings = () => {
       {/* Header */}
       <div className="mb-10 relative z-10">
         <h1 className="text-3xl font-bold text-white tracking-tight">Account Settings</h1>
-        <p className="text-gray-400 mt-1">Manage your personal information and security.</p>
+        <p className="text-gray-400 mt-1">Manage your personal information and subscription.</p>
       </div>
 
       {/* Main Card */}
@@ -85,9 +95,9 @@ const ProfileSettings = () => {
             <button className="w-full flex items-center gap-3 px-4 py-3 bg-[#38E07B]/10 text-[#38E07B] font-bold rounded-xl border border-[#38E07B]/20 transition-all">
                <FiUser /> General Profile
             </button>
-            <button className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 font-medium rounded-xl hover:bg-white/5 hover:text-white transition-all mt-2">
-               <FiShield /> Security & Privacy
-            </button>
+            <Link to="/plans" className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 font-medium rounded-xl hover:bg-white/5 hover:text-white transition-all mt-2">
+               <FiCreditCard /> Subscription
+            </Link>
           </div>
         </div>
 
@@ -118,7 +128,7 @@ const ProfileSettings = () => {
               <div className="text-center md:text-left">
                  <h3 className="text-xl font-bold text-white">Profile Picture</h3>
                  <p className="text-sm text-gray-400 mt-1 mb-4 max-w-xs">
-                   Upload a new avatar. Recommended size: 400x400px. Max size: 5MB.
+                   Upload a new avatar. Recommended size: 400x400px.
                  </p>
                  <div className="flex gap-3 justify-center md:justify-start">
                     <button 
@@ -159,6 +169,57 @@ const ProfileSettings = () => {
                   <FiShield className="inline" /> Email cannot be changed for security reasons.
                 </p>
               </div>
+            </div>
+
+            {/* 🟢 NEW: Subscription Status Section */}
+            <div className="pt-8 border-t border-white/10">
+               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                 <FiCreditCard className="text-[#38E07B]" /> Subscription Status
+               </h3>
+               
+               <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                  <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                     
+                     {/* Plan Name */}
+                     <div>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Current Plan</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl font-bold text-[#38E07B]">{user?.plan}</span>
+                          {user?.plan !== 'Free' && (
+                            <span className="px-2 py-0.5 bg-[#38E07B]/20 text-[#38E07B] text-[10px] font-bold rounded-full border border-[#38E07B]/30">
+                              PREMIUM
+                            </span>
+                          )}
+                        </div>
+                     </div>
+
+                     {/* Expiry Date Logic */}
+                     {user?.plan === 'Free' ? (
+                        <div className="text-right">
+                          <p className="text-gray-400 text-sm mb-2">Upgrade to unlock AI & Limits</p>
+                          <Link to="/plans" className="inline-block px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-bold rounded-lg transition border border-white/10">
+                             Upgrade Plan
+                          </Link>
+                        </div>
+                     ) : (
+                        <div className="flex items-center gap-4 bg-black/20 px-4 py-3 rounded-xl border border-white/5">
+                           <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                              <FiCalendar size={20} />
+                           </div>
+                           <div>
+                              <p className="text-xs font-bold text-gray-400 uppercase">Expires On</p>
+                              <p className="text-white font-mono font-bold">
+                                {formatDate(user?.planExpiry)}
+                              </p>
+                           </div>
+                           <div className="h-8 w-[1px] bg-white/10 mx-2"></div>
+                           <div className="text-green-400 text-xs font-bold flex items-center gap-1">
+                             <FiCheckCircle /> Active
+                           </div>
+                        </div>
+                     )}
+                  </div>
+               </div>
             </div>
 
             {/* Action Bar */}

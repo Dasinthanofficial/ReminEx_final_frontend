@@ -6,31 +6,36 @@ import { AuthProvider } from './context/AuthContext';
 
 // Layouts
 import Layout from './components/Layout';      // Public (Navbar+Footer)
-import UserLayout from './components/UserLayout'; // 🟢 NEW User Dashboard Layout (Sidebar)
+import UserLayout from './components/UserLayout'; // User Dashboard Layout (Sidebar)
 import AdminLayout from './components/AdminLayout'; // Admin Sidebar
 
 // Guards
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 
-// Pages
+// Pages - Public & Auth
 import Home from './pages/Home';
 import About from './pages/About';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Plans from './pages/Plans';
+
+// Pages - User
 import UserDashboard from './pages/UserDashboard';
 import Products from './pages/Products';
 import AddProduct from './pages/AddProduct';
 import EditProduct from './pages/EditProduct';
-import Plans from './pages/Plans';
-import ManagePlans from './pages/ManagePlans';
-import PaymentSuccess from './pages/PaymentSuccess';
-import AdminDashboard from './pages/AdminDashboard';
 import ProfileSettings from './pages/ProfileSettings';
+import PaymentSuccess from './pages/PaymentSuccess';
+
+// Pages - Admin
+import AdminDashboard from './pages/AdminDashboard';
+import ManagePlans from './pages/ManagePlans';
 import AdminUsers from './pages/AdminUsers';
 import AdminAnalytics from './pages/AdminAnalytics';
+import AdminPromotion from './pages/AdminPromotion'; // 👈 Import the new page
 
 const queryClient = new QueryClient();
 
@@ -52,10 +57,10 @@ function App() {
             <Route element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="about" element={<About />} />
-              <Route path="plans" element={<Plans />} /> {/* Public Pricing Page */}
+              <Route path="plans" element={<Plans />} /> 
             </Route>
 
-            {/* 3. 🟢 USER DASHBOARD (Sidebar Layout, No Footer) */}
+            {/* 3. 🟢 USER DASHBOARD */}
             <Route element={<PrivateRoute />}>
               <Route element={<UserLayout />}>
                  <Route path="dashboard" element={<UserDashboard />} />
@@ -67,13 +72,15 @@ function App() {
               </Route>
             </Route>
 
-            {/* 4. ADMIN DASHBOARD (Sidebar Layout) */}
+            {/* 4. ADMIN DASHBOARD */}
             <Route element={<AdminRoute />}>
               <Route element={<AdminLayout />}>
                 <Route path="admin" element={<AdminDashboard />} />
                 <Route path="admin/plans" element={<ManagePlans />} />
                 <Route path="admin/users" element={<AdminUsers />} />
                 <Route path="admin/analytics" element={<AdminAnalytics />} />
+                {/* 👇 Added Promotion Route */}
+                <Route path="admin/promote" element={<AdminPromotion />} />
               </Route>
             </Route>
 

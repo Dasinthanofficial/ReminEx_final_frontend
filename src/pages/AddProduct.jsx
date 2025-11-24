@@ -1,3 +1,5 @@
+
+
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -16,6 +18,7 @@ const AddProduct = () => {
     expiryDate: "",
     price: "",
     weight: "",
+    unit: "g", // 👈 Added default unit
     image: "", 
   });
   const [file, setFile] = useState(null);
@@ -50,7 +53,11 @@ const AddProduct = () => {
         fd.append("price", priceInUSD);
       }
 
-      if (form.weight) fd.append("weight", form.weight);
+      if (form.weight) {
+        fd.append("weight", form.weight);
+        fd.append("unit", form.unit); // 👈 Send unit to backend
+      }
+
       if (file) fd.append("image", file);
       else if (form.image) fd.append("image", form.image);
 
@@ -115,11 +122,11 @@ const AddProduct = () => {
              onChange={handleChange}
              required
              className={inputStyle}
-             style={{ colorScheme: "dark" }} // 👈 Forces calendar picker to be dark mode
+             style={{ colorScheme: "dark" }} 
            />
         </div>
 
-        {/* Price & Weight */}
+        {/* Price & Weight/Unit */}
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className={labelStyle}>
@@ -141,16 +148,31 @@ const AddProduct = () => {
             </div>
           </div>
 
+          {/* 👇 UPDATED: Quantity & Unit Selector */}
           <div>
-            <label className={labelStyle}>Weight (g)</label>
-            <input
-              type="number"
-              name="weight"
-              value={form.weight}
-              onChange={handleChange}
-              placeholder="e.g. 500"
-              className={inputStyle}
-            />
+            <label className={labelStyle}>Quantity / Size</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                name="weight"
+                value={form.weight}
+                onChange={handleChange}
+                placeholder="e.g. 500"
+                className={`${inputStyle} flex-1`}
+              />
+              <select
+                name="unit"
+                value={form.unit}
+                onChange={handleChange}
+                className="bg-black/40 border border-white/10 rounded-xl text-white px-4 outline-none focus:border-[#38E07B] cursor-pointer font-bold"
+              >
+                <option value="g">g</option>
+                <option value="kg">kg</option>
+                <option value="ml">ml</option>
+                <option value="L">L</option>
+                <option value="pcs">pcs</option>
+              </select>
+            </div>
           </div>
         </div>
 

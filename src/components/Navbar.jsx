@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getCurrencyList } from '../utils/currencyHelper'; // 👈 Import Helper
-import { FiMenu, FiX, FiLogOut, FiSettings, FiChevronDown, FiGrid, FiGlobe } from 'react-icons/fi'; // 👈 Import Globe
+import { getCurrencyList } from '../utils/currencyHelper';
+import { FiMenu, FiX, FiLogOut, FiSettings, FiChevronDown, FiGrid, FiGlobe } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import Logo from '../assets/logo.png';
 
@@ -10,20 +10,15 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  
-  // 1. Get Currency props from Auth
-  const { user, logout, isAuthenticated, isAdmin, currency, changeCurrency } = useAuth();
-  
-  // 2. Local state for the list of currencies
-  const [currencies, setCurrencies] = useState(["USD"]);
 
+  const { user, logout, isAuthenticated, isAdmin, currency, changeCurrency } = useAuth();
+  const [currencies, setCurrencies] = useState(["USD"]);
   const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
 
-    // 3. Fetch currency list (delayed slightly to ensure API cache is ready)
     const timer = setTimeout(() => {
       setCurrencies(getCurrencyList());
     }, 1000);
@@ -36,6 +31,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     logout();
+    setIsOpen(false); // Close mobile menu on logout
     navigate('/');
   };
 
@@ -48,27 +44,25 @@ const Navbar = () => {
   };
 
   const navLinkStyle = ({ isActive }) =>
-    `text-sm font-medium transition-all duration-300 px-4 py-2 rounded-full ${
-      isActive 
-        ? 'bg-[#38E07B]/10 text-[#38E07B] shadow-[0_0_15px_rgba(56,224,123,0.2)] border border-[#38E07B]/20' 
-        : 'text-gray-300 hover:text-white hover:bg-white/5'
+    `text-sm font-medium transition-all duration-300 px-4 py-2 rounded-full ${isActive
+      ? 'bg-[#38E07B]/10 text-[#38E07B] shadow-[0_0_15px_rgba(56,224,123,0.2)] border border-[#38E07B]/20'
+      : 'text-gray-300 hover:text-white hover:bg-white/5'
     }`;
 
   return (
-    <nav 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled 
-          ? 'bg-[#122017]/80 backdrop-blur-xl border-b border-white/10 shadow-lg' 
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled || isOpen
+          ? 'bg-[#122017]/90 backdrop-blur-xl border-b border-white/10 shadow-lg'
           : 'bg-transparent border-b border-transparent'
-      }`}
+        }`}
     >
       <div className="container mx-auto px-6">
         <div className="flex justify-between items-center h-20">
-          
+
           {/* Logo */}
-          <NavLink to="/" className="flex items-center gap-2 group">
-            <img src={Logo} alt="ReminEx" className="h-10 w-auto group-hover:scale-105 transition-transform duration-300" />
-            <span className="text-xl font-bold text-white tracking-wide group-hover:text-[#38E07B] transition-colors">
+          <NavLink to="/" className="flex items-center gap-2 group z-50">
+            <img src={Logo} alt="ReminEx" className="h-8 md:h-10 w-auto group-hover:scale-105 transition-transform duration-300" />
+            <span className="text-lg md:text-xl font-bold text-white tracking-wide group-hover:text-[#38E07B] transition-colors">
               ReminEx
             </span>
           </NavLink>
@@ -79,18 +73,18 @@ const Navbar = () => {
             <NavLink to="/about" className={navLinkStyle}>About</NavLink>
             <NavLink to="/plans" className={navLinkStyle}>Pricing</NavLink>
 
-            {/* 🌍 GLOBAL CURRENCY SELECTOR (DESKTOP) */}
-            <div className="ml-2 flex items-center gap-1 bg-white/10 px-2 py-1 rounded-lg border border-white/10 hover:border-[#38E07B]/50 transition-colors">
-                <FiGlobe className="text-[#38E07B] text-xs" />
-                <select 
-                    value={currency} 
-                    onChange={(e) => changeCurrency(e.target.value)}
-                    className="bg-transparent text-xs font-bold text-white outline-none cursor-pointer appearance-none w-10 uppercase"
-                >
-                    {currencies.map(c => (
-                        <option key={c} value={c} className="text-black">{c}</option>
-                    ))}
-                </select>
+            {/* 🌍 Currency Selector (Desktop) */}
+            <div className="ml-2 flex items-center gap-1 bg-white/5 px-2 py-1 rounded-lg border border-white/10 hover:border-[#38E07B]/50 transition-colors">
+              <FiGlobe className="text-[#38E07B] text-xs" />
+              <select
+                value={currency}
+                onChange={(e) => changeCurrency(e.target.value)}
+                className="bg-transparent text-xs font-bold text-white outline-none cursor-pointer appearance-none w-10 uppercase text-center"
+              >
+                {currencies.map(c => (
+                  <option key={c} value={c} className="text-black">{c}</option>
+                ))}
+              </select>
             </div>
 
             {isAuthenticated ? (
@@ -98,9 +92,9 @@ const Navbar = () => {
                 <NavLink to="/dashboard" className={navLinkStyle}>
                   Dashboard
                 </NavLink>
-                
+
                 {isAdmin && (
-                  <NavLink to="/admin" className="text-[#38E07B] hover:text-white transition-colors">
+                  <NavLink to="/admin" className="text-[#38E07B] hover:text-white transition-colors p-2 hover:bg-white/5 rounded-full">
                     <FiGrid className="text-xl" title="Admin Panel" />
                   </NavLink>
                 )}
@@ -139,10 +133,10 @@ const Navbar = () => {
                             </span>
                           )}
                         </div>
-                        
+
                         <div className="p-2">
-                          <NavLink 
-                            to="/profile" 
+                          <NavLink
+                            to="/profile"
                             onClick={() => setIsDropdownOpen(false)}
                             className="flex items-center px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white rounded-xl transition-all group"
                           >
@@ -151,7 +145,7 @@ const Navbar = () => {
                             </div>
                             Settings
                           </NavLink>
-                          
+
                           <button
                             onClick={() => { handleLogout(); setIsDropdownOpen(false); }}
                             className="w-full flex items-center px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-all group mt-1"
@@ -183,7 +177,7 @@ const Navbar = () => {
           </div>
 
           {/* Mobile Toggle */}
-          <button onClick={() => setIsOpen(!isOpen)} className="md:hidden text-white text-2xl focus:outline-none">
+          <button onClick={() => setIsOpen(!isOpen)} className="md:hidden text-white text-2xl focus:outline-none z-50 p-2">
             {isOpen ? <FiX /> : <FiMenu />}
           </button>
         </div>
@@ -194,39 +188,60 @@ const Navbar = () => {
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: '100vh' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-[#122017]/95 backdrop-blur-xl border-b border-white/10 overflow-hidden"
+            className="fixed inset-0 top-0 left-0 w-full bg-[#122017] z-40 flex flex-col pt-24 px-6 overflow-y-auto"
           >
-            <div className="px-6 py-8 space-y-4">
-              
-              {/* 🌍 MOBILE CURRENCY SELECTOR */}
-              <div className="flex justify-between items-center text-gray-300 pb-4 border-b border-white/10">
-                  <span className="flex items-center gap-2"><FiGlobe className="text-[#38E07B]" /> Currency:</span>
-                  <select 
-                    value={currency} 
-                    onChange={(e) => changeCurrency(e.target.value)}
-                    className="bg-white/10 text-white p-2 rounded border border-white/20 text-sm outline-none"
-                  >
-                    {currencies.map(c => <option key={c} value={c} className="text-black">{c}</option>)}
-                  </select>
+
+            {/* Authenticated User Info (Mobile) */}
+            {isAuthenticated && (
+              <div className="flex items-center gap-4 mb-8 pb-8 border-b border-white/10">
+                <img src={getAvatarSrc(user?.avatar)} alt="Profile" className="w-12 h-12 rounded-full border-2 border-[#38E07B]" />
+                <div>
+                  <p className="text-white font-bold text-lg">{user?.name}</p>
+                  <p className="text-gray-400 text-sm">{user?.email}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <NavLink to="/" onClick={() => setIsOpen(false)} className="block text-xl font-medium text-gray-300 hover:text-white py-3">Home</NavLink>
+              <NavLink to="/about" onClick={() => setIsOpen(false)} className="block text-xl font-medium text-gray-300 hover:text-white py-3">About</NavLink>
+              <NavLink to="/plans" onClick={() => setIsOpen(false)} className="block text-xl font-medium text-gray-300 hover:text-white py-3">Pricing</NavLink>
+
+              {/* 🌍 Currency Selector (Mobile) */}
+              <div className="flex justify-between items-center py-4 border-y border-white/10 my-4">
+                <span className="text-gray-400 flex items-center gap-2"><FiGlobe className="text-[#38E07B]" /> Currency</span>
+                <select
+                  value={currency}
+                  onChange={(e) => changeCurrency(e.target.value)}
+                  className="bg-black/40 text-white px-4 py-2 rounded-xl border border-white/10 text-sm font-medium outline-none focus:border-[#38E07B] focus:ring-1 focus:ring-[#38E07B] transition-all cursor-pointer"
+                >
+                  {currencies.map(c => (
+                    <option key={c} value={c} className="bg-[#122017] text-white">
+                      {c}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <NavLink to="/" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">Home</NavLink>
-              <NavLink to="/about" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">About</NavLink>
-              <NavLink to="/plans" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">Pricing</NavLink>
-              
               {isAuthenticated ? (
                 <>
-                  <div className="h-px bg-white/10 my-4"></div>
-                  <NavLink to="/dashboard" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-[#38E07B]">Dashboard</NavLink>
-                  <NavLink to="/profile" onClick={() => setIsOpen(false)} className="block text-lg font-medium text-gray-300 hover:text-white">Profile Settings</NavLink>
-                  <button onClick={handleLogout} className="block w-full text-left text-lg font-medium text-red-400 mt-4">Sign Out</button>
+                  <NavLink to="/dashboard" onClick={() => setIsOpen(false)} className="block text-xl font-bold text-[#38E07B] py-3">Dashboard</NavLink>
+                  <NavLink to="/profile" onClick={() => setIsOpen(false)} className="block text-xl font-medium text-gray-300 hover:text-white py-3">Settings</NavLink>
+                  {isAdmin && <NavLink to="/admin" onClick={() => setIsOpen(false)} className="block text-xl font-medium text-gray-300 hover:text-white py-3">Admin Panel</NavLink>}
+
+                  <button
+                    onClick={handleLogout}
+                    className="w-full mt-8 py-4 bg-red-500/10 text-red-400 font-bold rounded-xl hover:bg-red-500/20 transition flex items-center justify-center gap-2"
+                  >
+                    <FiLogOut /> Sign Out
+                  </button>
                 </>
               ) : (
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                  <NavLink to="/login" onClick={() => setIsOpen(false)} className="py-3 text-center rounded-xl bg-white/5 text-white border border-white/10">Log In</NavLink>
-                  <NavLink to="/register" onClick={() => setIsOpen(false)} className="py-3 text-center rounded-xl bg-[#38E07B] text-[#122017] font-bold">Sign Up</NavLink>
+                <div className="grid grid-cols-1 gap-4 mt-8">
+                  <NavLink to="/login" onClick={() => setIsOpen(false)} className="py-4 text-center rounded-xl bg-white/5 text-white border border-white/10 font-bold">Log In</NavLink>
+                  <NavLink to="/register" onClick={() => setIsOpen(false)} className="py-4 text-center rounded-xl bg-[#38E07B] text-[#122017] font-bold shadow-lg shadow-[#38E07B]/20">Get Started</NavLink>
                 </div>
               )}
             </div>

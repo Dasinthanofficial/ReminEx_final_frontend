@@ -1,3 +1,5 @@
+
+
 import React from 'react';
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -8,7 +10,8 @@ import {
   FiLogOut,
   FiPieChart,
   FiGrid,
-  FiArrowRight
+  FiArrowRight,
+  FiMail // 👈 Added FiMail
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Logo from '../assets/logo.png';
@@ -27,6 +30,7 @@ const AdminLayout = () => {
     { path: '/admin/users', icon: <FiUsers />, label: 'Users' },
     { path: '/admin/plans', icon: <FiLayers />, label: 'Subscription Plans' },
     { path: '/admin/analytics', icon: <FiPieChart />, label: 'Analytics' },
+    { path: '/admin/promote', icon: <FiMail />, label: 'Promotions' }, // 👈 Added this line
   ];
 
   return (

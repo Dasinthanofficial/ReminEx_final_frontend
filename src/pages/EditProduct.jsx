@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { productService } from "../services/productService";
@@ -18,6 +19,7 @@ const EditProduct = () => {
     expiryDate: "",
     price: "",
     weight: "",
+    unit: "g", // 👈 Added unit
     image: ""
   });
   const [file, setFile] = useState(null);
@@ -40,7 +42,8 @@ const EditProduct = () => {
         setProduct({
           ...data,
           price: localPrice,
-          expiryDate: formattedDate
+          expiryDate: formattedDate,
+          unit: data.unit || "g" // 👈 Load saved unit
         });
 
         setPreview(getImageUrl(data.image));
@@ -82,7 +85,10 @@ const EditProduct = () => {
         fd.append("price", priceInUSD);
       }
 
-      if (product.weight) fd.append("weight", product.weight);
+      if (product.weight) {
+        fd.append("weight", product.weight);
+        fd.append("unit", product.unit); // 👈 Send unit to update
+      }
       
       if (file) {
         fd.append("image", file);
@@ -103,14 +109,12 @@ const EditProduct = () => {
 
   if (loading) return <div className="p-8 text-center text-white">Loading product details...</div>;
 
-  // Styles
   const inputStyle = "w-full p-3.5 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-[#38E07B] focus:ring-1 focus:ring-[#38E07B] outline-none transition-all";
   const labelStyle = "block text-xs font-bold text-[#38E07B] uppercase tracking-wider mb-2";
 
   return (
     <div className="max-w-4xl mx-auto pb-12">
       
-      {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <Link to="/products" className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition border border-white/5">
            <FiArrowLeft size={24} />
@@ -124,7 +128,7 @@ const EditProduct = () => {
       <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
         <form onSubmit={handleSubmit} className="grid md:grid-cols-3 gap-0">
           
-          {/* Left Column: Image Upload */}
+          {/* Left: Image */}
           <div className="p-8 border-b md:border-b-0 md:border-r border-white/10 flex flex-col items-center bg-black/20">
              <div className="w-full aspect-square rounded-xl overflow-hidden bg-black/40 border-2 border-dashed border-white/10 flex items-center justify-center relative group mb-6">
                 {preview ? (
@@ -135,13 +139,11 @@ const EditProduct = () => {
                     <span className="text-sm">No Image</span>
                   </div>
                 )}
-                
                 <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white font-bold text-sm">
                    Change Image
                    <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
                 </label>
              </div>
-
              <div className="w-full">
                 <p className="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-2">
                   <FiLink /> Or paste Image URL
@@ -157,9 +159,8 @@ const EditProduct = () => {
              </div>
           </div>
 
-          {/* Right Column: Form Fields */}
+          {/* Right: Form */}
           <div className="md:col-span-2 p-8 space-y-6">
-             
              <div className="space-y-6">
                 <div>
                    <label className={labelStyle}>Product Name</label>
@@ -219,16 +220,31 @@ const EditProduct = () => {
                       </div>
                    </div>
 
+                   {/* 👇 UPDATED: Quantity & Unit Selector */}
                    <div>
-                      <label className={labelStyle}>Weight (g)</label>
-                      <input
-                        type="number"
-                        name="weight"
-                        value={product.weight}
-                        onChange={handleChange}
-                        className={inputStyle}
-                        placeholder="0"
-                      />
+                      <label className={labelStyle}>Quantity / Size</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          name="weight"
+                          value={product.weight}
+                          onChange={handleChange}
+                          className={`${inputStyle} flex-1`}
+                          placeholder="0"
+                        />
+                        <select
+                          name="unit"
+                          value={product.unit}
+                          onChange={handleChange}
+                          className="bg-black/40 border border-white/10 rounded-xl text-white px-4 outline-none focus:border-[#38E07B] cursor-pointer font-bold"
+                        >
+                          <option value="g">g</option>
+                          <option value="kg">kg</option>
+                          <option value="ml">ml</option>
+                          <option value="L">L</option>
+                          <option value="pcs">pcs</option>
+                        </select>
+                      </div>
                    </div>
                 </div>
              </div>
@@ -249,7 +265,6 @@ const EditProduct = () => {
                    Cancel
                 </button>
              </div>
-
           </div>
         </form>
       </div>
