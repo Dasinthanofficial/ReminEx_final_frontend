@@ -74,10 +74,7 @@ const Plans = () => {
       { text: 'Track up to 5 products', included: true },
       { text: '7-day expiry notifications', included: true },
       { text: 'Basic dashboard', included: true },
-      { text: 'Unlimited products', included: false },
-      { text: 'AI recipe suggestions', included: false },
-      { text: 'Monthly reports', included: false },
-      { text: 'Priority support', included: false },
+     
     ],
     Monthly: [
       { text: 'Unlimited products', included: true },
@@ -85,17 +82,16 @@ const Plans = () => {
       { text: 'Advanced dashboard', included: true },
       { text: 'AI recipe suggestions', included: true },
       { text: 'Monthly reports', included: true },
-      { text: 'Export data', included: true },
-      { text: 'Priority support', included: true },
+     
     ],
     Yearly: [
-      { text: 'Everything in Monthly', included: true },
-      { text: '2 months free', included: true },
-      { text: 'Custom categories', included: true },
-      { text: 'API access', included: true },
-      { text: 'Advanced analytics', included: true },
-      { text: 'White-label options', included: true },
-      { text: 'Dedicated support', included: true },
+      { text: 'Unlimited products', included: true },
+      { text: '7-day expiry notifications', included: true },
+      { text: 'Advanced dashboard', included: true },
+      { text: 'AI recipe suggestions', included: true },
+      { text: 'Monthly reports', included: true },
+      { text: '25% Discount', included: true },
+      
     ],
   };
 

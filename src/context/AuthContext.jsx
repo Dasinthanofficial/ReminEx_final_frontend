@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { authService } from "../services/authService";
 import toast from "react-hot-toast";
-import { fetchRates } from "../utils/currencyHelper"; // 👈 Import this
+import { fetchRates } from "../utils/currencyHelper";
 
 const AuthContext = createContext({});
 
@@ -10,13 +10,11 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  
-  // ✅ 1. Add Currency State
-  const [currency, setCurrency] = useState(localStorage.getItem("currency") || "USD");
+  const [currency, setCurrency] = useState(
+    localStorage.getItem("currency") || "USD"
+  );
 
-  /* 🔹 Load user & Rates on start */
   useEffect(() => {
-    // ✅ 2. Fetch dynamic exchange rates immediately
     fetchRates();
 
     const initAuth = async () => {
@@ -35,7 +33,6 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
-  /* 🔹 Login (email/password) */
   const login = async (email, password) => {
     try {
       const res = await authService.login(email, password);
@@ -49,7 +46,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  /* 🔹 Create new account */
   const register = async (formData) => {
     try {
       const res = await authService.register(formData);
@@ -63,7 +59,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  /* 🔹 Google sign‑in */
   const loginWithGoogle = async (idToken) => {
     try {
       const res = await authService.loginWithGoogle(idToken);
@@ -77,25 +72,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  /* 🔹 Logout */
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
     toast.success("Logged out successfully");
   };
 
-  /* 🔹 Update local user data (without login) */
-  const updateUser = (updatedUser) => {
-    setUser(updatedUser);
+  // ✅ Allow both object and functional updates
+  const updateUser = (updater) => {
+    setUser((prev) =>
+      typeof updater === "function" ? updater(prev) : updater
+    );
   };
 
-  /* 🔹 Change Currency Helper */
   const changeCurrency = (newCurrency) => {
     setCurrency(newCurrency);
     localStorage.setItem("currency", newCurrency);
   };
 
-  /* 🔹 Derived values */
   const isAuthenticated = !!user;
   const isAdmin = user?.role === "admin";
   const isPremium = ["Monthly", "Yearly"].includes(user?.plan);
@@ -111,14 +105,11 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     isAdmin,
     isPremium,
-    // ✅ Export currency values
     currency,
-    changeCurrency, 
+    changeCurrency,
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
   );
 };
