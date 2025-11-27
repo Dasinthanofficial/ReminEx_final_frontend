@@ -176,3 +176,4 @@ const RecipeSuggestions = () => {
 };
 
 export default RecipeSuggestions;
+
