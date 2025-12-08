@@ -12,3 +12,4 @@ export const authService = {
   loginWithGoogle: (idToken) =>
     api.post('/auth/google', { idToken }), // match backend route
 };
+
