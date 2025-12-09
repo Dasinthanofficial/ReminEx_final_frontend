@@ -47,38 +47,39 @@
 // export default api;
 
 
-// src/services/api.js
-import axios from 'axios';
+import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://your-project-name.onrender.com/api';
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://your-project-name.onrender.com/api";
 
-console.log('🔧 API configured with URL:', API_URL);
+console.log("🔧 API configured with URL:", API_URL);
 
 const api = axios.create({
   baseURL: API_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-  withCredentials: true, // Important for CORS
+  withCredentials: true,
 });
 
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     console.log(
-      '📤 Request:',
-      (config.method || 'GET').toUpperCase(),
+      "📤 Request:",
+      (config.method || "GET").toUpperCase(),
       config.url,
       config.data
     );
     return config;
   },
   (error) => {
-    console.error('❌ Request error:', error);
+    console.error("❌ Request error:", error);
     return Promise.reject(error);
   }
 );
@@ -86,7 +87,7 @@ api.interceptors.request.use(
 // Response interceptor
 api.interceptors.response.use(
   (response) => {
-    console.log('📥 Response:', response.status, response.data);
+    console.log("📥 Response:", response.status, response.data);
     // Always return the JSON body
     return response.data;
   },
@@ -95,12 +96,12 @@ api.interceptors.response.use(
     const data = error.response?.data;
     const url = error.config?.url || "";
 
-    console.error('❌ Response error:', status, data);
+    console.error("❌ Response error:", status, data);
 
     // Only hard-redirect on 401s from protected APIs (not on /auth/*)
     if (status === 401 && !url.includes("/auth/")) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      localStorage.removeItem("token");
+      window.location.href = "/login";
     }
 
     return Promise.reject(error);
