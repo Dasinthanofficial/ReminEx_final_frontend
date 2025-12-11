@@ -19,7 +19,7 @@ const EditProduct = () => {
     expiryDate: "",
     price: "",
     weight: "",
-    unit: "g", // 👈 Added unit
+    unit: "g", 
     image: ""
   });
   const [file, setFile] = useState(null);

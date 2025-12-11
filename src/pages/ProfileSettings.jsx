@@ -7,7 +7,7 @@ import {
 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { motion, AnimatePresence } from "framer-motion"; // Added AnimatePresence
+import { motion, AnimatePresence } from "framer-motion"; 
 import { format } from "date-fns"; 
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
