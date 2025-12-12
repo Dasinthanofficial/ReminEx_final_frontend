@@ -29,8 +29,7 @@ const AddProduct = () => {
 
   // Scanner state
   const [showScanner, setShowScanner] = useState(false);
-  const [scanning, setScanning] = useState(false);        // barcode auto‑fill
-  const [labelScanning, setLabelScanning] = useState(false); // label OCR
+  const [scanning, setScanning] = useState(false);
 
   // Camera refs
   const videoRef = useRef(null);
@@ -93,7 +92,7 @@ const AddProduct = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Image upload handler (for product image & label OCR)
+  // Image upload handler
   const handleFile = (e) => {
     const f = e.target.files[0];
     if (f) {
@@ -164,41 +163,6 @@ const AddProduct = () => {
       toast.error(err.response?.data?.message || "Failed to auto-fill");
     } finally {
       setScanning(false);
-    }
-  };
-
-  // 🔍 Scan label (OCR) to guess expiry date / weight / unit
-  const handleScanLabel = async () => {
-    if (!file) {
-      toast.error("Upload or capture a label image first");
-      return;
-    }
-
-    const fd = new FormData();
-    fd.append("image", file);
-
-    setLabelScanning(true);
-    try {
-      const res = await api.post("/products/scan/label", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      const guessed = res.guessed || {};
-      const { expiryDate, weight, unit } = guessed;
-
-      setForm((prev) => ({
-        ...prev,
-        expiryDate: expiryDate || prev.expiryDate,
-        weight: weight || prev.weight,
-        unit: unit || prev.unit,
-      }));
-
-      toast.success("Label scanned. Please confirm expiry & weight.");
-    } catch (err) {
-      console.error("Label scan error:", err);
-      toast.error(err.response?.data?.message || "Failed to scan label");
-    } finally {
-      setLabelScanning(false);
     }
   };
 
@@ -408,52 +372,37 @@ const AddProduct = () => {
 
         <hr className="border-white/10 my-6" />
 
-        {/* Image Upload + Label Scan */}
+        {/* Image Upload */}
         <div>
-          <label className={labelStyle}>Product Image / Label</label>
+          <label className={labelStyle}>Product Image</label>
           <div className="grid md:grid-cols-2 gap-6">
-            {/* LEFT: Image + Scan Label */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              {/* Image area with file overlay */}
-              <div className="relative h-40 rounded-xl border-2 border-dashed border-white/20 overflow-hidden cursor-pointer group">
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleFile}
-                  className="absolute inset-0 opacity-0 cursor-pointer z-10"
+            <div className="border-2 border-dashed border-white/20 rounded-xl p-8 relative group bg-white/5 cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFile}
+                className="absolute inset-0 opacity-0 cursor-pointer z-10"
+              />
+
+              {preview ? (
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="w-full h-40 object-cover rounded-lg border border-white/10"
                 />
-
-                {preview ? (
-                  <img
-                    src={preview}
-                    alt="Preview"
-                    className="w-full h-full object-cover rounded-lg border border-white/10"
-                  />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-center">
-                    <div className="w-12 h-12 rounded-full bg-[#38E07B]/10 flex items-center justify-center mb-3 text-[#38E07B]">
-                      <FiUpload className="text-xl" />
-                    </div>
-                    <span className="text-sm text-gray-300">
-                      Tap to capture or upload photo
-                    </span>
+              ) : (
+                <div className="text-center flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-full bg-[#38E07B]/10 flex items-center justify-center mb-3 text-[#38E07B]">
+                    <FiUpload className="text-xl" />
                   </div>
-                )}
-              </div>
-
-              {/* Scan Label Button – outside overlay */}
-              <button
-                type="button"
-                onClick={handleScanLabel}
-                disabled={!file || labelScanning}
-                className="mt-4 w-full text-xs font-bold bg-purple-600 text-white py-2.5 rounded-xl hover:bg-purple-700 transition disabled:opacity-60"
-              >
-                {labelScanning ? "Scanning label..." : "Scan Label (OCR)"}
-              </button>
+                  <span className="text-sm text-gray-300">
+                    Tap to capture or upload photo
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* RIGHT: URL input */}
             <div className="p-6 bg-white/5 border border-white/10 rounded-xl">
               <p className="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">
                 <FiLink className="text-[#38E07B]" /> Or paste image URL
