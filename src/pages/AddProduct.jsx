@@ -1,12 +1,12 @@
-// import React, { useState } from "react";
+// import React, { useState, useRef, useEffect } from "react";
 // import { useNavigate, Link } from "react-router-dom";
 // import toast from "react-hot-toast";
 // import { productService } from "../services/productService";
 // import { useAuth } from "../context/AuthContext";
 // import { convertLocalToUSD } from "../utils/currencyHelper";
 // import { FiUpload, FiLink, FiCamera, FiX } from "react-icons/fi";
-// import { useZxing } from "react-zxing";
 // import api from "../services/api";
+// import { BrowserMultiFormatReader } from "@zxing/browser";
 
 // const AddProduct = () => {
 //   const navigate = useNavigate();
@@ -21,55 +21,73 @@
 //     unit: "g",
 //     image: "",
 //   });
+
 //   const [file, setFile] = useState(null);
 //   const [preview, setPreview] = useState("");
 //   const [saving, setSaving] = useState(false);
 //   const [barcode, setBarcode] = useState("");
 
-//   // 🆕 Scanner state
+//   // Scanner state
 //   const [showScanner, setShowScanner] = useState(false);
 //   const [scanning, setScanning] = useState(false);
 
+//   // Camera ref
+//   const videoRef = useRef(null);
+//   const readerRef = useRef(null);
+
+//   // Start Scanner
+//   useEffect(() => {
+//     if (showScanner) {
+//       const reader = new BrowserMultiFormatReader();
+//       readerRef.current = reader;
+
+//       reader.decodeFromVideoDevice(
+//         undefined,
+//         videoRef.current,
+//         (result) => {
+//           if (result) {
+//             const code = result.getText();
+//             setBarcode(code);
+//             setShowScanner(false);
+//             handleAutoFill(code);
+//             reader.reset(); // stop scanner
+//           }
+//         }
+//       );
+//     }
+
+//     return () => {
+//       // Stop camera when closing scanner
+//       readerRef.current?.reset();
+//     };
+//   }, [showScanner]);
+
+//   // Input change handler
 //   const handleChange = (e) => {
 //     const { name, value } = e.target;
 //     setForm((prev) => ({ ...prev, [name]: value }));
 //   };
 
+//   // Image upload handler
 //   const handleFile = (e) => {
 //     const f = e.target.files[0];
 //     if (f) {
-//       // ✅ Validate file type
 //       if (!f.type.startsWith("image/")) {
 //         toast.error("Please upload an image file");
 //         return;
 //       }
-//       // ✅ Validate file size (5MB)
 //       if (f.size > 5 * 1024 * 1024) {
 //         toast.error("Image must be under 5MB");
 //         return;
 //       }
+
 //       setFile(f);
 //       setPreview(URL.createObjectURL(f));
 //       setForm((prev) => ({ ...prev, image: "" }));
 //     }
 //   };
 
-//   // 🆕 Barcode Scanner Hook
-//   const { ref: videoRef } = useZxing({
-//     onDecodeResult(result) {
-//       const scannedCode = result.getText();
-//       console.log("📷 Scanned:", scannedCode);
-//       setBarcode(scannedCode);
-//       setShowScanner(false); // Close scanner
-//       handleAutoFill(scannedCode); // Auto-fill form
-//     },
-//     onError(error) {
-//       console.error("Scanner error:", error);
-//       toast.error("Camera access denied or not available");
-//     },
-//   });
-
-//   // Auto-fill product details from barcode
+//   // Auto-fill using backend
 //   const handleAutoFill = async (code) => {
 //     const trimmed = (code || "").trim();
 //     if (!trimmed) {
@@ -79,9 +97,7 @@
 
 //     setScanning(true);
 //     try {
-//       // ⚠️ api.get already returns data (not { data: ... })
-//       const res = await api.get(`/products/scan/barcode/${trimmed}`);
-//       const info = res || {};
+//       const info = await api.get(`/products/scan/barcode/${trimmed}`);
 
 //       if (!info || typeof info !== "object") {
 //         toast.error("Unexpected response from barcode API");
@@ -92,7 +108,7 @@
 //         let weightVal = prev.weight;
 //         let unitVal = prev.unit;
 
-//         // Parse quantity like "500 g" or "1 L"
+//         // Parse "500 g"
 //         if (info.quantity) {
 //           const match = info.quantity.match(/(\d+\.?\d*)\s*(g|kg|ml|l|L)/i);
 //           if (match) {
@@ -113,24 +129,20 @@
 
 //       if (info.image) {
 //         setPreview(info.image);
-//         setFile(null); // we are using a URL, not a local file
+//         setFile(null);
 //       }
 
-//       toast.success(
-//         "✓ Name, image & weight auto-filled. Please enter expiry date & price.",
-//         {
-//           duration: 4000,
-//           icon: "📦",
-//         }
-//       );
+//       toast.success("✓ Auto-filled! Add expiry date & price.", {
+//         icon: "📦",
+//       });
 //     } catch (err) {
-//       const msg = err.response?.data?.message || "Failed to scan barcode";
-//       toast.error(msg);
+//       toast.error(err.response?.data?.message || "Failed to auto-fill");
 //     } finally {
 //       setScanning(false);
 //     }
 //   };
 
+//   // Submit form
 //   const handleSubmit = async (e) => {
 //     e.preventDefault();
 //     try {
@@ -164,8 +176,7 @@
 //       toast.success("Product added!");
 //       navigate("/products");
 //     } catch (err) {
-//       const msg = err.response?.data?.message || "Failed to add product";
-//       toast.error(msg);
+//       toast.error(err.response?.data?.message || "Failed to add product");
 //     } finally {
 //       setSaving(false);
 //     }
@@ -188,7 +199,7 @@
 //       </div>
 
 //       <form onSubmit={handleSubmit} className="space-y-6">
-//         {/* 🆕 Barcode Scanner Section */}
+//         {/* Barcode Section */}
 //         <div>
 //           <label className={labelStyle}>Barcode</label>
 
@@ -211,18 +222,11 @@
 //                   : "bg-[#38E07B] text-[#122017] hover:bg-[#2fc468]"
 //               }`}
 //             >
-//               {showScanner ? (
-//                 <>
-//                   <FiX /> Close
-//                 </>
-//               ) : (
-//                 <>
-//                   <FiCamera /> Scan
-//                 </>
-//               )}
+//               {showScanner ? <FiX /> : <FiCamera />}
+//               {showScanner ? "Close" : "Scan"}
 //             </button>
 
-//             {/* Manual Auto-fill Button */}
+//             {/* Manual Auto-fill */}
 //             <button
 //               type="button"
 //               onClick={() => handleAutoFill(barcode)}
@@ -233,7 +237,7 @@
 //             </button>
 //           </div>
 
-//           {/* Camera Scanner UI */}
+//           {/* Scanner UI */}
 //           {showScanner && (
 //             <div className="relative mt-4 rounded-xl overflow-hidden border-2 border-[#38E07B] bg-black">
 //               <video
@@ -243,21 +247,23 @@
 //                 playsInline
 //                 muted
 //               />
-//               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+
+//               <div className="absolute inset-0 flex items-center justify-center">
 //                 <div className="w-48 h-48 border-4 border-[#38E07B] rounded-lg animate-pulse" />
 //               </div>
+
 //               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-lg text-xs font-bold">
-//                 📷 Position barcode within the frame
+//                 📷 Position barcode inside the frame
 //               </div>
 //             </div>
 //           )}
 
 //           <p className="text-[10px] text-gray-500 mt-1">
-//             Scan barcode or enter manually to auto-fill product details.
+//             Scan barcode or enter manually to auto-fill.
 //           </p>
 //         </div>
 
-//         {/* Name & Category */}
+//         {/* Product Name */}
 //         <div className="grid md:grid-cols-2 gap-6">
 //           <div>
 //             <label className={labelStyle}>Product Name</label>
@@ -265,25 +271,22 @@
 //               name="name"
 //               value={form.name}
 //               onChange={handleChange}
-//               placeholder="e.g. Milk, Apples"
+//               placeholder="Milk, Apples..."
 //               className={inputStyle}
 //               required
 //             />
 //           </div>
+
 //           <div>
 //             <label className={labelStyle}>Category</label>
 //             <select
 //               name="category"
 //               value={form.category}
 //               onChange={handleChange}
-//               className={`${inputStyle} appearance-none cursor-pointer`}
+//               className={`${inputStyle} cursor-pointer`}
 //             >
-//               <option value="Food" className="bg-[#122017] text-white">
-//                 Food
-//               </option>
-//               <option value="Non-Food" className="bg-[#122017] text-white">
-//                 Non-Food
-//               </option>
+//               <option value="Food">Food</option>
+//               <option value="Non-Food">Non-Food</option>
 //             </select>
 //           </div>
 //         </div>
@@ -298,28 +301,22 @@
 //             onChange={handleChange}
 //             required
 //             className={inputStyle}
-//             style={{ colorScheme: "dark" }}
 //           />
 //         </div>
 
-//         {/* Price & Weight/Unit */}
+//         {/* Price and Weight */}
 //         <div className="grid md:grid-cols-2 gap-6">
 //           <div>
 //             <label className={labelStyle}>Price ({currency})</label>
-//             <div className="relative">
-//               <span className="absolute left-4 top-3.5 text-gray-400 text-sm font-bold pointer-events-none">
-//                 {currency}
-//               </span>
-//               <input
-//                 type="number"
-//                 name="price"
-//                 value={form.price}
-//                 onChange={handleChange}
-//                 placeholder="0.00"
-//                 step="0.01"
-//                 className={`${inputStyle} pl-16`}
-//               />
-//             </div>
+//             <input
+//               type="number"
+//               name="price"
+//               value={form.price}
+//               onChange={handleChange}
+//               placeholder="0.00"
+//               className={inputStyle}
+//               step="0.01"
+//             />
 //           </div>
 
 //           <div>
@@ -330,14 +327,14 @@
 //                 name="weight"
 //                 value={form.weight}
 //                 onChange={handleChange}
-//                 placeholder="e.g. 500"
+//                 placeholder="500"
 //                 className={`${inputStyle} flex-1`}
 //               />
 //               <select
 //                 name="unit"
 //                 value={form.unit}
 //                 onChange={handleChange}
-//                 className="bg-black/40 border border-white/10 rounded-xl text-white px-4 outline-none focus:border-[#38E07B] cursor-pointer font-bold"
+//                 className="bg-black/40 border border-white/10 rounded-xl text-white px-4 font-bold cursor-pointer"
 //               >
 //                 <option value="g">g</option>
 //                 <option value="kg">kg</option>
@@ -351,47 +348,40 @@
 
 //         <hr className="border-white/10 my-6" />
 
-//         {/* Image Upload Section */}
+//         {/* Image Upload */}
 //         <div>
 //           <label className={labelStyle}>Product Image</label>
-
 //           <div className="grid md:grid-cols-2 gap-6">
-//             {/* File Upload (with instant capture on mobile) */}
-//             <div className="border-2 border-dashed border-white/20 rounded-xl p-8 flex flex-col items-center justify-center text-center bg-white/5 hover:bg-white/10 transition cursor-pointer relative group">
+//             <div className="border-2 border-dashed border-white/20 rounded-xl p-8 relative group bg-white/5 cursor-pointer">
 //               <input
 //                 type="file"
 //                 accept="image/*"
-//                 capture="environment" // opens camera on mobile
+//                 capture="environment"
 //                 onChange={handleFile}
 //                 className="absolute inset-0 opacity-0 cursor-pointer z-10"
 //               />
+
 //               {preview ? (
-//                 <div className="relative w-full h-40">
-//                   <img
-//                     src={preview}
-//                     alt="Preview"
-//                     className="w-full h-full object-cover rounded-lg shadow-lg border border-white/10"
-//                   />
-//                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg text-white font-bold text-sm">
-//                     Change Image
-//                   </div>
-//                 </div>
+//                 <img
+//                   src={preview}
+//                   alt="Preview"
+//                   className="w-full h-40 object-cover rounded-lg border border-white/10"
+//                 />
 //               ) : (
-//                 <>
+//                 <div className="text-center flex flex-col items-center">
 //                   <div className="w-12 h-12 rounded-full bg-[#38E07B]/10 flex items-center justify-center mb-3 text-[#38E07B]">
 //                     <FiUpload className="text-xl" />
 //                   </div>
-//                   <span className="text-sm text-gray-300 font-medium group-hover:text-white transition-colors">
+//                   <span className="text-sm text-gray-300">
 //                     Tap to capture or upload photo
 //                   </span>
-//                 </>
+//                 </div>
 //               )}
 //             </div>
 
-//             {/* URL Input */}
-//             <div className="flex flex-col justify-center p-6 bg-white/5 border border-white/10 rounded-xl">
+//             <div className="p-6 bg-white/5 border border-white/10 rounded-xl">
 //               <p className="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">
-//                 <FiLink className="text-[#38E07B]" /> Or paste Image URL
+//                 <FiLink className="text-[#38E07B]" /> Or paste image URL
 //               </p>
 //               <input
 //                 type="url"
@@ -399,27 +389,26 @@
 //                 value={form.image}
 //                 onChange={handleChange}
 //                 placeholder="https://example.com/image.jpg"
-//                 className={`${inputStyle} text-sm`}
+//                 className={inputStyle}
 //                 disabled={!!file}
 //               />
 //             </div>
 //           </div>
 //         </div>
 
-//         {/* Buttons */}
 //         <div className="flex gap-4 pt-6">
 //           <Link
 //             to="/products"
-//             className="flex-1 text-center py-3.5 rounded-xl font-bold text-gray-300 bg-white/5 hover:bg-white/10 border border-white/10 transition hover:text-white"
+//             className="flex-1 text-center py-3.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10"
 //           >
 //             Cancel
 //           </Link>
 //           <button
 //             type="submit"
 //             disabled={saving}
-//             className="flex-1 bg-[#38E07B] text-[#122017] font-bold py-3.5 rounded-xl hover:bg-[#2fc468] hover:shadow-[0_0_20px_rgba(56,224,123,0.4)] transition-all disabled:opacity-70 active:scale-[0.98]"
+//             className="flex-1 bg-[#38E07B] text-[#122017] font-bold py-3.5 rounded-xl hover:bg-[#2fc468] transition disabled:opacity-60"
 //           >
-//             {saving ? "Adding Product..." : "Save Product"}
+//             {saving ? "Adding..." : "Save Product"}
 //           </button>
 //         </div>
 //       </form>
@@ -428,6 +417,8 @@
 // };
 
 // export default AddProduct;
+
+
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -461,33 +452,66 @@ const AddProduct = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [scanning, setScanning] = useState(false);
 
-  // Camera ref
+  // Camera refs
   const videoRef = useRef(null);
   const readerRef = useRef(null);
 
-  // Start Scanner
+  // Start / stop scanner
   useEffect(() => {
-    if (showScanner) {
-      const reader = new BrowserMultiFormatReader();
-      readerRef.current = reader;
+    if (!showScanner) return;
 
-      reader.decodeFromVideoDevice(
-        undefined,
-        videoRef.current,
-        (result) => {
-          if (result) {
-            const code = result.getText();
-            setBarcode(code);
-            setShowScanner(false);
-            handleAutoFill(code);
-            reader.reset(); // stop scanner
-          }
+    const reader = new BrowserMultiFormatReader();
+    readerRef.current = reader;
+    let active = true;
+
+    (async () => {
+      try {
+        // List camera devices
+        const devices = await reader.listVideoInputDevices();
+        if (!devices.length) {
+          toast.error("No camera device found");
+          setShowScanner(false);
+          return;
         }
-      );
-    }
+
+        // Prefer back camera if available
+        let deviceId = devices[0].deviceId;
+        const backCam = devices.find((d) =>
+          d.label.toLowerCase().includes("back") ||
+          d.label.toLowerCase().includes("rear")
+        );
+        if (backCam) deviceId = backCam.deviceId;
+
+        await reader.decodeFromVideoDevice(
+          deviceId,
+          videoRef.current,
+          (result, err) => {
+            if (!active) return;
+
+            if (result) {
+              const code = result.getText();
+              console.log("✅ Barcode scanned:", code);
+              setBarcode(code);
+              setShowScanner(false);
+              handleAutoFill(code);
+              reader.reset();
+            }
+
+            // Ignore "NotFoundException" (normal when there is no barcode in frame)
+            if (err && err.name !== "NotFoundException") {
+              console.warn("ZXing decode error:", err);
+            }
+          }
+        );
+      } catch (err) {
+        console.error("Camera/decoder error:", err);
+        toast.error("Unable to access camera or decode barcode.");
+        setShowScanner(false);
+      }
+    })();
 
     return () => {
-      // Stop camera when closing scanner
+      active = false;
       readerRef.current?.reset();
     };
   }, [showScanner]);
