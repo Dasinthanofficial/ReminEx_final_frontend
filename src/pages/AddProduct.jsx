@@ -412,33 +412,37 @@ const AddProduct = () => {
         <div>
           <label className={labelStyle}>Product Image / Label</label>
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="border-2 border-dashed border-white/20 rounded-xl p-8 relative group bg-white/5 cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleFile}
-                className="absolute inset-0 opacity-0 cursor-pointer z-10"
-              />
-
-              {preview ? (
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="w-full h-40 object-cover rounded-lg border border-white/10"
+            {/* LEFT: Image + Scan Label */}
+            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+              {/* Image area with file overlay */}
+              <div className="relative h-40 rounded-xl border-2 border-dashed border-white/20 overflow-hidden cursor-pointer group">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleFile}
+                  className="absolute inset-0 opacity-0 cursor-pointer z-10"
                 />
-              ) : (
-                <div className="text-center flex flex-col items-center">
-                  <div className="w-12 h-12 rounded-full bg-[#38E07B]/10 flex items-center justify-center mb-3 text-[#38E07B]">
-                    <FiUpload className="text-xl" />
-                  </div>
-                  <span className="text-sm text-gray-300">
-                    Tap to capture or upload photo
-                  </span>
-                </div>
-              )}
 
-              {/* Scan Label Button */}
+                {preview ? (
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="w-full h-full object-cover rounded-lg border border-white/10"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-center">
+                    <div className="w-12 h-12 rounded-full bg-[#38E07B]/10 flex items-center justify-center mb-3 text-[#38E07B]">
+                      <FiUpload className="text-xl" />
+                    </div>
+                    <span className="text-sm text-gray-300">
+                      Tap to capture or upload photo
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Scan Label Button – outside overlay */}
               <button
                 type="button"
                 onClick={handleScanLabel}
@@ -449,6 +453,7 @@ const AddProduct = () => {
               </button>
             </div>
 
+            {/* RIGHT: URL input */}
             <div className="p-6 bg-white/5 border border-white/10 rounded-xl">
               <p className="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">
                 <FiLink className="text-[#38E07B]" /> Or paste image URL
