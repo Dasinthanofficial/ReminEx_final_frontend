@@ -1,408 +1,285 @@
-import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   FiTrendingDown,
-  FiDollarSign,
   FiAlertCircle,
   FiChevronLeft,
   FiChevronRight,
   FiPackage,
-} from 'react-icons/fi';
-import { motion, AnimatePresence } from 'framer-motion';
-import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
-import { formatPrice } from '../utils/currencyHelper';
+} from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
+import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
+import { formatPrice } from "../utils/currencyHelper";
+import SelectMenu from "./SelectMenu";
 
 const MonthlyReport = () => {
   const { currency } = useAuth();
 
-  // Initialize with current month/year
-  const currentDate = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
   const [direction, setDirection] = useState(0);
 
-  // Generate available years (last 5 years)
-  const availableYears = useMemo(() => {
+  const months = useMemo(
+    () => [
+      { value: 1, label: "January" },
+      { value: 2, label: "February" },
+      { value: 3, label: "March" },
+      { value: 4, label: "April" },
+      { value: 5, label: "May" },
+      { value: 6, label: "June" },
+      { value: 7, label: "July" },
+      { value: 8, label: "August" },
+      { value: 9, label: "September" },
+      { value: 10, label: "October" },
+      { value: 11, label: "November" },
+      { value: 12, label: "December" },
+    ],
+    []
+  );
+
+  const yearOptions = useMemo(() => {
     const years = [];
-    const currentYear = new Date().getFullYear();
     for (let i = currentYear; i >= currentYear - 4; i--) {
-      years.push(i);
+      years.push({ value: i, label: String(i) });
     }
     return years;
-  }, []);
+  }, [currentYear]);
 
-  // Month names
-  const months = [
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' },
-  ];
-
-  const {
-    data: report,
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ['monthlyReport', selectedMonth, selectedYear],
-    queryFn: () => api.get(`/user/reports?month=${selectedMonth}&year=${selectedYear}`),
+  const { data: report, isLoading, isError, error } = useQuery({
+    queryKey: ["monthlyReport", selectedMonth, selectedYear],
+    queryFn: () =>
+      api.get(`/user/reports?month=${selectedMonth}&year=${selectedYear}`),
     retry: false,
     keepPreviousData: true,
   });
 
-  // Navigation handlers
-  const goToPreviousMonth = () => {
+  const isCurrentMonth =
+    selectedMonth === currentMonth && selectedYear === currentYear;
+
+  // Disable next if next month would be in the future
+  const isNextMonthFuture =
+    selectedYear > currentYear ||
+    (selectedYear === currentYear && selectedMonth >= currentMonth);
+
+  const monthLabel = useMemo(() => {
+    const d = new Date(selectedYear, selectedMonth - 1, 1);
+    return d.toLocaleString("default", { month: "long", year: "numeric" });
+  }, [selectedMonth, selectedYear]);
+
+  const goPrev = () => {
     setDirection(-1);
     if (selectedMonth === 1) {
       setSelectedMonth(12);
-      setSelectedYear((prev) => prev - 1);
+      setSelectedYear((p) => p - 1);
     } else {
-      setSelectedMonth((prev) => prev - 1);
+      setSelectedMonth((p) => p - 1);
     }
   };
 
-  const goToNextMonth = () => {
+  const goNext = () => {
     setDirection(1);
     if (selectedMonth === 12) {
       setSelectedMonth(1);
-      setSelectedYear((prev) => prev + 1);
+      setSelectedYear((p) => p + 1);
     } else {
-      setSelectedMonth((prev) => prev + 1);
+      setSelectedMonth((p) => p + 1);
     }
   };
 
-  const goToCurrentMonth = () => {
+  const goCurrent = () => {
     setDirection(0);
-    setSelectedMonth(currentDate.getMonth() + 1);
-    setSelectedYear(currentDate.getFullYear());
+    setSelectedMonth(currentMonth);
+    setSelectedYear(currentYear);
   };
 
-  // Check if we're at the current month
-  const isCurrentMonth =
-    selectedMonth === currentDate.getMonth() + 1 &&
-    selectedYear === currentDate.getFullYear();
-
-  // Check if next month is in the future
-  const isNextMonthFuture =
-    selectedYear > currentDate.getFullYear() ||
-    (selectedYear === currentDate.getFullYear() &&
-      selectedMonth >= currentDate.getMonth() + 1);
-
-  // Label for the selected month/year
-  const monthLabel = useMemo(() => {
-    const labelDate = new Date(selectedYear, selectedMonth - 1, 1);
-    return labelDate.toLocaleString('default', {
-      month: 'long',
-      year: 'numeric',
-    });
-  }, [selectedMonth, selectedYear]);
-
-  // Animation variants
-  const slideVariants = {
-    enter: (direction) => ({
-      x: direction > 0 ? 100 : -100,
-      opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-    },
-    exit: (direction) => ({
-      x: direction < 0 ? 100 : -100,
-      opacity: 0,
-    }),
+  const slide = {
+    enter: (dir) => ({ x: dir > 0 ? 70 : -70, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir) => ({ x: dir < 0 ? 70 : -70, opacity: 0 }),
   };
 
-  // Navigation Header Component
-  const NavigationHeader = () => (
-    <div className="mb-6">
-      {/* Title */}
-      <h2 className="text-lg font-bold text-white mb-4 text-center">
+  const Header = () => (
+    <div className="mb-5">
+      <h2 className="text-base md:text-lg font-bold text-white text-center">
         Monthly Waste Report
       </h2>
 
-      {/* Navigation Controls */}
-      <div className="flex items-center justify-between gap-2">
-        {/* Previous Button */}
+      {/* ✅ compact, mobile-friendly row */}
+      <div className="mt-4 grid grid-cols-[36px_1fr_36px] items-center gap-2">
+        {/* Prev */}
         <button
-          onClick={goToPreviousMonth}
-          className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all duration-200"
+          onClick={goPrev}
+          className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white transition grid place-items-center"
           aria-label="Previous month"
         >
-          <FiChevronLeft size={20} />
+          <FiChevronLeft size={16} />
         </button>
 
-        {/* Month/Year Selectors */}
-        <div className="flex items-center justify-center gap-2 flex-1">
-          <select
-            value={selectedMonth}
-            onChange={(e) => {
-              setDirection(0);
-              setSelectedMonth(Number(e.target.value));
-            }}
-            className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#38E07B]/50 cursor-pointer hover:bg-white/20 transition-colors"
-          >
-            {months.map((month) => (
-              <option
-                key={month.value}
-                value={month.value}
-                className="bg-gray-900 text-white"
-              >
-                {month.label}
-              </option>
-            ))}
-          </select>
+        {/* Month + Year */}
+        <div className="flex gap-2 min-w-0">
+          <div className="flex-1 min-w-0 relative z-[9999]">
+            <SelectMenu
+              value={selectedMonth}
+              onChange={(val) => {
+                setDirection(0);
+                setSelectedMonth(val);
+              }}
+              options={months}
+              size="sm"           // ✅ key fix
+              maxHeight="max-h-56"
+            />
+          </div>
 
-          <select
-            value={selectedYear}
-            onChange={(e) => {
-              setDirection(0);
-              setSelectedYear(Number(e.target.value));
-            }}
-            className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#38E07B]/50 cursor-pointer hover:bg-white/20 transition-colors"
-          >
-            {availableYears.map((year) => (
-              <option
-                key={year}
-                value={year}
-                className="bg-gray-900 text-white"
-              >
-                {year}
-              </option>
-            ))}
-          </select>
+          <div className="w-[96px] shrink-0 relative z-[9999]">
+            <SelectMenu
+              value={selectedYear}
+              onChange={(val) => {
+                setDirection(0);
+                setSelectedYear(val);
+              }}
+              options={yearOptions}
+              size="sm"           // ✅ key fix
+              maxHeight="max-h-56"
+            />
+          </div>
         </div>
 
-        {/* Next Button */}
+        {/* Next */}
         <button
-          onClick={goToNextMonth}
+          onClick={goNext}
           disabled={isNextMonthFuture}
-          className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 ${
+          className={`w-9 h-9 rounded-xl transition grid place-items-center ${
             isNextMonthFuture
-              ? 'bg-white/5 text-gray-500 cursor-not-allowed'
-              : 'bg-white/10 hover:bg-white/20 text-white'
+              ? "bg-white/5 text-gray-500 cursor-not-allowed"
+              : "bg-white/10 hover:bg-white/20 text-white"
           }`}
           aria-label="Next month"
         >
-          <FiChevronRight size={20} />
+          <FiChevronRight size={16} />
         </button>
       </div>
 
-      {/* Today Button */}
       {!isCurrentMonth && (
         <div className="flex justify-center mt-3">
           <button
-            onClick={goToCurrentMonth}
-            className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#38E07B]/20 text-[#38E07B] hover:bg-[#38E07B]/30 transition-all duration-200"
+            onClick={goCurrent}
+            className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#38E07B]/20 text-[#38E07B] hover:bg-[#38E07B]/30 transition"
           >
             Go to Current Month
           </button>
         </div>
       )}
+
+      <p className="text-center text-[11px] text-gray-500 mt-2">
+        Showing: <span className="text-gray-300">{monthLabel}</span>
+      </p>
     </div>
   );
 
-  // Loading skeleton
+  const Shell = ({ children }) => (
+    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-5 md:p-6 shadow-lg relative overflow-visible">
+      {children}
+    </div>
+  );
+
   if (isLoading) {
     return (
-      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 h-full flex flex-col">
-        <NavigationHeader />
-        <div className="animate-pulse flex-1 space-y-4">
+      <Shell>
+        <Header />
+        <div className="animate-pulse space-y-4">
+          <div className="h-20 bg-white/10 rounded-2xl" />
+          <div className="h-20 bg-white/10 rounded-2xl" />
           <div className="h-24 bg-white/10 rounded-2xl" />
-          <div className="h-24 bg-white/10 rounded-2xl" />
-          <div className="h-32 bg-white/10 rounded-2xl mt-auto" />
         </div>
-      </div>
+      </Shell>
     );
   }
 
-  // Error state
   if (isError) {
     const msg =
       error?.response?.data?.message ||
       error?.message ||
-      'Unable to load monthly report.';
+      "Unable to load monthly report.";
     return (
-      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 h-full flex flex-col">
-        <NavigationHeader />
-        <div className="flex-1 flex flex-col justify-center items-center text-center border border-red-500/30 rounded-2xl p-6">
-          <FiAlertCircle className="text-4xl text-red-400 mb-3" />
-          <p className="text-sm font-semibold text-red-300">{msg}</p>
+      <Shell>
+        <Header />
+        <div className="border border-red-500/30 rounded-2xl p-5 flex items-center gap-3 text-red-300">
+          <FiAlertCircle className="text-xl shrink-0" />
+          <p className="text-sm font-semibold">{msg}</p>
         </div>
-      </div>
+      </Shell>
     );
   }
 
-  const totalWaste = report?.totalWaste || 0;
-  const wastedCount = report?.wastedCount || 0;
+  const totalWaste = Number(report?.totalWaste || 0);
+  const wastedCount = Number(report?.wastedCount || 0);
 
-  // No waste this month
-  if (totalWaste === 0 && wastedCount === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 h-full flex flex-col shadow-lg"
-      >
-        <NavigationHeader />
-
-        <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
-            key={`${selectedMonth}-${selectedYear}`}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="flex-1 flex flex-col items-center justify-center text-center px-4"
-          >
-            <div className="w-16 h-16 rounded-full bg-[#38E07B]/20 flex items-center justify-center text-[#38E07B] mb-4">
-              <FiTrendingDown size={28} />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">
-              No Waste Recorded
-            </h3>
-            <p className="text-sm text-gray-400 mb-2">{monthLabel}</p>
-            <p className="text-sm text-gray-300">
-              Great job! No items were wasted during this month.
-            </p>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Pagination Dots */}
-        <div className="flex justify-center items-center gap-1.5 mt-4">
-          {months.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setDirection(index + 1 > selectedMonth ? 1 : -1);
-                setSelectedMonth(index + 1);
-              }}
-              className={`h-2 rounded-full transition-all duration-200 ${
-                index + 1 === selectedMonth
-                  ? 'bg-[#38E07B] w-6'
-                  : 'bg-white/20 hover:bg-white/40 w-2'
-              }`}
-              aria-label={`Go to ${months[index].label}`}
-            />
-          ))}
-        </div>
-      </motion.div>
-    );
-  }
-
-  // Normal report with waste
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 h-full flex flex-col relative overflow-hidden shadow-lg"
-    >
-      {/* Background Glow */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-[60px] pointer-events-none" />
-
-      <NavigationHeader />
+    <Shell>
+      <Header />
 
       <AnimatePresence mode="wait" custom={direction}>
         <motion.div
           key={`${selectedMonth}-${selectedYear}`}
           custom={direction}
-          variants={slideVariants}
+          variants={slide}
           initial="enter"
           animate="center"
           exit="exit"
-          transition={{ duration: 0.3, ease: 'easeInOut' }}
-          className="flex-1 flex flex-col relative z-10"
+          transition={{ duration: 0.2, ease: "easeInOut" }}
+          className="space-y-4"
         >
-          {/* Stats Grid */}
-          <div className="space-y-4 mb-6">
-            {/* Total Waste Value Card */}
-            <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/20 rounded-2xl p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-xs text-red-300 uppercase font-bold tracking-wide mb-1">
-                    Total Waste Value
-                  </p>
-                  <p className="text-2xl font-bold text-white">
-                    {formatPrice(totalWaste, currency)}
-                  </p>
-                </div>
-                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
-                  <FiTrendingDown className="text-2xl text-red-400" />
-                </div>
+          {/* Waste Value */}
+          <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/20 rounded-2xl p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] text-red-300 uppercase font-extrabold tracking-wider mb-1">
+                  Total Waste Value
+                </p>
+                <p className="text-2xl font-black text-white">
+                  {formatPrice(totalWaste, currency)}
+                </p>
               </div>
-            </div>
-
-            {/* Items Wasted Card */}
-            <div className="bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 rounded-2xl p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-xs text-orange-300 uppercase font-bold tracking-wide mb-1">
-                    Items Wasted
-                  </p>
-                  <p className="text-2xl font-bold text-white">{wastedCount}</p>
-                </div>
-                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
-                  <FiPackage className="text-2xl text-orange-400" />
-                </div>
+              <div className="w-11 h-11 rounded-full bg-red-500/20 flex items-center justify-center">
+                <FiTrendingDown className="text-red-300 text-xl" />
               </div>
             </div>
           </div>
 
-          {/* Tips Section */}
-          <div className="bg-black/20 border border-white/5 rounded-2xl p-4 mt-auto">
-            <h3 className="font-bold text-[#38E07B] text-sm mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#38E07B]" />
-              Reduce Waste Tips
-            </h3>
-            <ul className="text-xs text-gray-400 space-y-2">
-              <li className="flex items-start gap-3">
-                <span className="text-[#38E07B] mt-0.5 flex-shrink-0">•</span>
-                <span>Plan meals ahead using expiring items.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-[#38E07B] mt-0.5 flex-shrink-0">•</span>
-                <span>Use FIFO (First In, First Out) method.</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-[#38E07B] mt-0.5 flex-shrink-0">•</span>
-                <span>Store products properly to extend life.</span>
-              </li>
+          {/* Items Wasted */}
+          <div className="bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 rounded-2xl p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] text-orange-300 uppercase font-extrabold tracking-wider mb-1">
+                  Items Wasted
+                </p>
+                <p className="text-2xl font-black text-white">{wastedCount}</p>
+              </div>
+              <div className="w-11 h-11 rounded-full bg-orange-500/20 flex items-center justify-center">
+                <FiPackage className="text-orange-300 text-xl" />
+              </div>
+            </div>
+          </div>
+
+          {/* Tips */}
+          <div className="bg-black/20 border border-white/10 rounded-2xl p-4">
+            <p className="text-xs font-bold text-[#38E07B] mb-2">
+              Tips to reduce waste
+            </p>
+            <ul className="text-[12px] text-gray-400 space-y-1.5">
+              <li>• Plan meals using items expiring soon.</li>
+              <li>• Keep “first in, first out” in your fridge.</li>
+              <li>• Freeze leftovers or extra produce early.</li>
             </ul>
           </div>
         </motion.div>
       </AnimatePresence>
-
-      {/* Pagination Dots */}
-      <div className="flex justify-center items-center gap-1.5 mt-4 relative z-10">
-        {months.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => {
-              setDirection(index + 1 > selectedMonth ? 1 : -1);
-              setSelectedMonth(index + 1);
-            }}
-            className={`h-2 rounded-full transition-all duration-200 ${
-              index + 1 === selectedMonth
-                ? 'bg-[#38E07B] w-6'
-                : 'bg-white/20 hover:bg-white/40 w-2'
-            }`}
-            aria-label={`Go to ${months[index].label}`}
-          />
-        ))}
-      </div>
-    </motion.div>
+    </Shell>
   );
 };
 

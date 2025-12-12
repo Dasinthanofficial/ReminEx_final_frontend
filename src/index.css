@@ -1,6 +1,65 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;600&family=Noto+Sans+Sinhala:wght@400;600&display=swap');
 
+/* Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     "Noto Sans Tamil", "Noto Sans Sinhala", sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    @apply antialiased;
+  }
+}
+
+/* Custom components */
+@layer components {
+  .btn-primary {
+    @apply bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-lg p-6;
+  }
+
+  /* ✅ Dark select dropdown styling */
+  .dark-select {
+    @apply bg-black/40 text-white border border-white/10;
+  }
+  .dark-select option {
+    background-color: #122017;
+    color: #ffffff;
+  }
+  .dark-select option:checked {
+    background-color: #38E07B;
+    color: #122017;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.6);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.85);
 }
