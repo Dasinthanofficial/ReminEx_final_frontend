@@ -41,14 +41,20 @@ const AddProduct = () => {
 
     const reader = new BrowserMultiFormatReader();
     readerRef.current = reader;
-    let active = true;
+    let cancelled = false;
 
     reader
-      .decodeFromVideoDevice(
-        undefined,          // let ZXing choose default camera
+      .decodeFromConstraints(
+        {
+          video: {
+            facingMode: { ideal: "environment" }, // prefer back camera on mobile
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        },
         videoRef.current,
         (result, err) => {
-          if (!active) return;
+          if (cancelled) return;
 
           if (result) {
             const code = result.getText();
@@ -56,6 +62,7 @@ const AddProduct = () => {
             setBarcode(code);
             setShowScanner(false);
             handleAutoFill(code);
+
             try {
               reader.reset();
             } catch (e) {
@@ -63,6 +70,7 @@ const AddProduct = () => {
             }
           }
 
+          // Ignore "NotFoundException" (no barcode in this frame)
           if (err && err.name !== "NotFoundException") {
             console.warn("ZXing decode error:", err);
           }
@@ -75,7 +83,7 @@ const AddProduct = () => {
       });
 
     return () => {
-      active = false;
+      cancelled = true;
       if (readerRef.current && typeof readerRef.current.reset === "function") {
         try {
           readerRef.current.reset();
