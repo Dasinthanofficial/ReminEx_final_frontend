@@ -2,13 +2,22 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { BrowserMultiFormatReader } from "@zxing/browser";
-import { FiUpload, FiLink, FiCamera, FiX } from "react-icons/fi";
+import { FiUpload, FiLink, FiCamera, FiX, FiZap, FiMic } from "react-icons/fi";
 
 import api from "../services/api";
 import { productService } from "../services/productService";
 import { useAuth } from "../context/AuthContext";
 import { convertLocalToUSD } from "../utils/currencyHelper";
 import SelectMenu from "../components/SelectMenu";
+
+// ✅ alias import to avoid any naming conflicts
+import { useSpeechRecognition as useSpeechRecognitionHook } from "../hooks/useSpeechRecognition.js";
+import {
+  extractFirstNumber,
+  parseSpokenDateToISO,
+  parseUnitFromText,
+  parseCategoryFromText,
+} from "../utils/speechParsers.js";
 
 const CATEGORY_OPTIONS = [
   { value: "Food", label: "Food" },
@@ -21,6 +30,14 @@ const UNIT_OPTIONS = [
   { value: "ml", label: "ml" },
   { value: "L", label: "L" },
   { value: "pcs", label: "pcs" },
+];
+
+const VOICE_LANGS = [
+  { label: "English", code: "en-US" },
+  { label: "Tamil", code: "ta-IN" },
+  { label: "Sinhala", code: "si-LK" },
+  { label: "Hindi", code: "hi-IN" },
+  { label: "Arabic", code: "ar-SA" },
 ];
 
 const AddProduct = () => {
@@ -48,14 +65,26 @@ const AddProduct = () => {
   const [saving, setSaving] = useState(false);
   const [barcode, setBarcode] = useState("");
 
-  // Scanner + AI
   const [showScanner, setShowScanner] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [predicting, setPredicting] = useState(false);
 
+  // Voice
+  const [voiceLang, setVoiceLang] = useState("en-US");
+  const { isSupported: voiceSupported, listening, listenOnce } =
+    useSpeechRecognitionHook();
+
   const videoRef = useRef(null);
   const readerRef = useRef(null);
 
+  // Cleanup blob previews
+  useEffect(() => {
+    return () => {
+      if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  // Barcode scanner
   useEffect(() => {
     if (!showScanner) return;
 
@@ -100,10 +129,14 @@ const AddProduct = () => {
 
     return () => {
       cancelled = true;
-      if (readerRef.current?.reset) {
-        try {
-          readerRef.current.reset();
-        } catch {}
+
+      try {
+        readerRef.current?.reset?.();
+      } catch {}
+
+      const stream = videoRef.current?.srcObject;
+      if (stream && typeof stream.getTracks === "function") {
+        stream.getTracks().forEach((t) => t.stop());
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,15 +151,74 @@ const AddProduct = () => {
     const f = e.target.files?.[0];
     if (!f) return;
 
-    if (!f.type.startsWith("image/")) return toast.error("Please upload an image file");
-    if (f.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
+    if (!f.type.startsWith("image/"))
+      return toast.error("Please upload an image file");
+    if (f.size > 5 * 1024 * 1024)
+      return toast.error("Image must be under 5MB");
 
     setFile(f);
-    setPreview(URL.createObjectURL(f));
-    setForm((prev) => ({ ...prev, image: "" }));
+
+    setPreview((prev) => {
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(f);
+    });
+
+    setForm((p) => ({ ...p, image: "" }));
   };
 
-  // Barcode auto-fill
+  const speakToFill = async (field) => {
+    if (!voiceSupported) {
+      toast.error("Voice input not supported in this browser. Use Chrome/Edge.");
+      return;
+    }
+
+    try {
+      toast.loading("Listening...", { id: "voice" });
+      const text = await listenOnce({ lang: voiceLang, timeoutMs: 12000 });
+      toast.dismiss("voice");
+
+      if (!text) return toast.error("Didn't catch that. Try again.");
+
+      if (field === "name") {
+        setForm((p) => ({ ...p, name: text }));
+        return;
+      }
+
+      if (field === "category") {
+        const cat = parseCategoryFromText(text);
+        if (!cat) return toast.error("Say 'Food' or 'Non food'.");
+        setForm((p) => ({ ...p, category: cat }));
+        return;
+      }
+
+      if (field === "expiryDate") {
+        const iso = parseSpokenDateToISO(text);
+        if (!iso) return toast.error("Say '2025-12-31' or 'tomorrow'.");
+        setForm((p) => ({ ...p, expiryDate: iso }));
+        return;
+      }
+
+      if (field === "price") {
+        const n = extractFirstNumber(text);
+        if (n == null) return toast.error("Could not find a number for price.");
+        setForm((p) => ({ ...p, price: String(n) }));
+        return;
+      }
+
+      if (field === "weight") {
+        const n = extractFirstNumber(text);
+        if (n == null)
+          return toast.error("Could not find a number for quantity.");
+        const unit = parseUnitFromText(text);
+        setForm((p) => ({ ...p, weight: String(n), unit: unit || p.unit }));
+        return;
+      }
+    } catch {
+      toast.dismiss("voice");
+      toast.error("Voice input failed. Try again or type manually.");
+    }
+  };
+
   const handleAutoFill = async (code) => {
     const trimmed = (code || "").trim();
     if (!trimmed) return toast.error("Please enter or scan a barcode first.");
@@ -171,7 +263,6 @@ const AddProduct = () => {
     }
   };
 
-  // AI spoilage prediction
   const handlePredictFromImage = async () => {
     if (!file) return toast.error("Upload or capture a produce image first");
 
@@ -185,20 +276,26 @@ const AddProduct = () => {
       });
 
       if (!res?.success || !res?.expiryDateISO) {
-        toast.error(res?.message || "Could not predict from image");
+        toast.error("Could not predict from image. Please set date manually.");
         return;
       }
 
       setForm((prev) => ({ ...prev, expiryDate: res.expiryDateISO }));
-      toast.success(`AI: ${res.condition}, likely spoils in ${res.days} day(s).`);
+
+      toast.success(
+        res.aiUsed
+          ? `AI: ${res.condition}, ~${res.days} day(s)`
+          : `Default estimate: ${res.days} day(s)`,
+        { duration: 3500 }
+      );
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to analyze image");
+      if (err.response?.status === 429) toast.error("AI service busy. Try again.");
+      else toast.error("Image analysis unavailable. Set expiry manually.");
     } finally {
       setPredicting(false);
     }
   };
 
-  // Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -238,6 +335,9 @@ const AddProduct = () => {
   const labelStyle =
     "block text-xs font-bold text-[#38E07B] uppercase tracking-wider mb-2";
 
+  const micBtn =
+    "absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50";
+
   return (
     <div className="max-w-3xl mx-auto p-8 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl my-8">
       <div className="mb-8 border-b border-white/10 pb-4">
@@ -246,10 +346,30 @@ const AddProduct = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {voiceSupported && (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+            <label className={labelStyle}>Voice Language</label>
+            <select
+              value={voiceLang}
+              onChange={(e) => setVoiceLang(e.target.value)}
+              disabled={listening}
+              className="w-full p-3 bg-black/40 border border-white/10 rounded-xl text-white"
+            >
+              {VOICE_LANGS.map((l) => (
+                <option key={l.code} value={l.code} className="text-black">
+                  {l.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-gray-500 mt-2">
+              Use mic buttons to fill fields. If voice fails, type manually.
+            </p>
+          </div>
+        )}
+
         {/* Barcode */}
         <div>
           <label className={labelStyle}>Barcode</label>
-
           <div className="flex gap-2 mb-2">
             <input
               type="text"
@@ -258,7 +378,6 @@ const AddProduct = () => {
               placeholder="e.g. 5601234567890"
               className={`${inputStyle} flex-1`}
             />
-
             <button
               type="button"
               onClick={() => setShowScanner(!showScanner)}
@@ -288,83 +407,113 @@ const AddProduct = () => {
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-48 h-48 border-4 border-[#38E07B] rounded-lg animate-pulse" />
               </div>
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-lg text-xs font-bold">
-                📷 Position barcode inside the frame
-              </div>
             </div>
           )}
-
-          <p className="text-[10px] text-gray-500 mt-1">Scan barcode or enter manually to auto-fill.</p>
         </div>
 
         {/* Name + Category */}
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className={labelStyle}>Product Name</label>
-            <input
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              placeholder="Milk, Apples..."
-              className={inputStyle}
-              required
-            />
+            <div className="relative">
+              <input
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                placeholder="Milk, Apples..."
+                className={inputStyle}
+                required
+              />
+              {voiceSupported && (
+                <button type="button" onClick={() => speakToFill("name")} disabled={listening} className={micBtn}>
+                  <FiMic />
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* ✅ Custom dropdown */}
-          <SelectMenu
-            label="Category"
-            value={form.category}
-            onChange={(val) => setForm((p) => ({ ...p, category: val }))}
-            options={CATEGORY_OPTIONS}
-          />
+          <div>
+            <label className={labelStyle}>Category</label>
+            <div className="relative">
+              <SelectMenu
+                value={form.category}
+                onChange={(val) => setForm((p) => ({ ...p, category: val }))}
+                options={CATEGORY_OPTIONS}
+              />
+              {voiceSupported && (
+                <button type="button" onClick={() => speakToFill("category")} disabled={listening} className={micBtn}>
+                  <FiMic />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Expiry */}
         <div>
           <label className={labelStyle}>Expiry Date</label>
-          <input
-            type="date"
-            name="expiryDate"
-            value={form.expiryDate}
-            onChange={handleChange}
-            required
-            min={todayISO}
-            className={inputStyle}
-            style={{ colorScheme: "dark" }}
-          />
+          <div className="relative">
+            <input
+              type="date"
+              name="expiryDate"
+              value={form.expiryDate}
+              onChange={handleChange}
+              required
+              min={todayISO}
+              className={inputStyle}
+              style={{ colorScheme: "dark" }}
+            />
+            {voiceSupported && (
+              <button type="button" onClick={() => speakToFill("expiryDate")} disabled={listening} className={micBtn}>
+                <FiMic />
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Price + Weight + Unit */}
+        {/* Price + Weight */}
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className={labelStyle}>Price ({currency})</label>
-            <input
-              type="number"
-              name="price"
-              value={form.price}
-              onChange={handleChange}
-              placeholder="0.00"
-              className={inputStyle}
-              step="0.01"
-              min="0"
-            />
+            <div className="relative">
+              <input
+                type="number"
+                name="price"
+                value={form.price}
+                onChange={handleChange}
+                placeholder="0.00"
+                className={inputStyle}
+                step="0.01"
+                min="0"
+              />
+              {voiceSupported && (
+                <button type="button" onClick={() => speakToFill("price")} disabled={listening} className={micBtn}>
+                  <FiMic />
+                </button>
+              )}
+            </div>
           </div>
 
           <div>
             <label className={labelStyle}>Quantity / Size</label>
             <div className="flex gap-2">
-              <input
-                type="number"
-                name="weight"
-                value={form.weight}
-                onChange={handleChange}
-                placeholder="500"
-                className={`${inputStyle} flex-1`}
-                min="0"
-              />
+              <div className="relative flex-1">
+                <input
+                  type="number"
+                  name="weight"
+                  value={form.weight}
+                  onChange={handleChange}
+                  placeholder="500"
+                  className={`${inputStyle} pr-10`}
+                  min="0"
+                />
+                {voiceSupported && (
+                  <button type="button" onClick={() => speakToFill("weight")} disabled={listening} className={micBtn}>
+                    <FiMic />
+                  </button>
+                )}
+              </div>
 
-              {/* ✅ Custom dropdown */}
               <SelectMenu
                 value={form.unit}
                 onChange={(val) => setForm((p) => ({ ...p, unit: val }))}
@@ -377,7 +526,7 @@ const AddProduct = () => {
 
         <hr className="border-white/10 my-6" />
 
-        {/* Image Upload + AI Predict */}
+        {/* Image + AI predict */}
         <div>
           <label className={labelStyle}>Product Image (Produce)</label>
           <div className="grid md:grid-cols-2 gap-6">
@@ -392,19 +541,13 @@ const AddProduct = () => {
                 />
 
                 {preview ? (
-                  <img
-                    src={preview}
-                    alt="Preview"
-                    className="w-full h-full object-cover rounded-lg border border-white/10"
-                  />
+                  <img src={preview} alt="Preview" className="w-full h-full object-cover rounded-lg border border-white/10" />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-center">
                     <div className="w-12 h-12 rounded-full bg-[#38E07B]/10 flex items-center justify-center mb-3 text-[#38E07B]">
                       <FiUpload className="text-xl" />
                     </div>
-                    <span className="text-sm text-gray-300">
-                      Tap to capture or upload produce photo
-                    </span>
+                    <span className="text-sm text-gray-300">Tap to capture or upload produce photo</span>
                   </div>
                 )}
               </div>
@@ -413,9 +556,9 @@ const AddProduct = () => {
                 type="button"
                 onClick={handlePredictFromImage}
                 disabled={!file || predicting}
-                className="mt-4 w-full text-xs font-bold bg-purple-600 text-white py-2.5 rounded-xl hover:bg-purple-700 transition disabled:opacity-60"
+                className="mt-4 w-full text-xs font-bold bg-purple-600 text-white py-2.5 rounded-xl hover:bg-purple-700 transition disabled:opacity-60 flex items-center justify-center gap-2"
               >
-                {predicting ? "Predicting..." : "Predict spoilage from image"}
+                {predicting ? "Analyzing..." : (<><FiZap /> Predict expiry from image</>)}
               </button>
             </div>
 

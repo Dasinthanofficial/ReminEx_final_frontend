@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { FiSave, FiArrowLeft, FiImage, FiLink } from "react-icons/fi";
+import { FiSave, FiArrowLeft, FiImage, FiLink, FiMic } from "react-icons/fi";
 
 import { productService } from "../services/productService";
 import { getImageUrl } from "../utils/imageHelper";
@@ -9,6 +9,14 @@ import { useAuth } from "../context/AuthContext";
 import { convertUSDToLocal, convertLocalToUSD } from "../utils/currencyHelper";
 import { toDateInputValue } from "../utils/dateHelper";
 import SelectMenu from "../components/SelectMenu";
+
+import { useSpeechRecognition as useSpeechRecognitionHook } from "../hooks/useSpeechRecognition.js";
+import {
+  extractFirstNumber,
+  parseSpokenDateToISO,
+  parseUnitFromText,
+  parseCategoryFromText,
+} from "../utils/speechParsers.js";
 
 const CATEGORY_OPTIONS = [
   { value: "Food", label: "Food" },
@@ -21,6 +29,14 @@ const UNIT_OPTIONS = [
   { value: "ml", label: "ml" },
   { value: "L", label: "L" },
   { value: "pcs", label: "pcs" },
+];
+
+const VOICE_LANGS = [
+  { label: "English", code: "en-US" },
+  { label: "Tamil", code: "ta-IN" },
+  { label: "Sinhala", code: "si-LK" },
+  { label: "Hindi", code: "hi-IN" },
+  { label: "Arabic", code: "ar-SA" },
 ];
 
 const EditProduct = () => {
@@ -49,6 +65,18 @@ const EditProduct = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Voice
+  const [voiceLang, setVoiceLang] = useState("en-US");
+  const { isSupported: voiceSupported, listening, listenOnce } =
+    useSpeechRecognitionHook();
+
+  // Cleanup blob previews
+  useEffect(() => {
+    return () => {
+      if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -63,7 +91,7 @@ const EditProduct = () => {
         });
 
         setPreview(getImageUrl(data.image));
-      } catch (err) {
+      } catch {
         toast.error("Failed to load product.");
         navigate("/products");
       } finally {
@@ -76,7 +104,6 @@ const EditProduct = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     setProduct((prev) => ({ ...prev, [name]: value }));
 
     if (name === "image") {
@@ -89,17 +116,67 @@ const EditProduct = () => {
     const f = e.target.files?.[0];
     if (!f) return;
 
-    if (!f.type.startsWith("image/")) {
-      toast.error("Please upload an image file");
-      return;
-    }
-    if (f.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB");
+    if (!f.type.startsWith("image/")) return toast.error("Please upload an image file");
+    if (f.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
+
+    setFile(f);
+
+    setPreview((prev) => {
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(f);
+    });
+  };
+
+  const speakToFill = async (field) => {
+    if (!voiceSupported) {
+      toast.error("Voice input not supported in this browser. Use Chrome/Edge.");
       return;
     }
 
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
+    try {
+      toast.loading("Listening...", { id: "voice" });
+      const text = await listenOnce({ lang: voiceLang, timeoutMs: 12000 });
+      toast.dismiss("voice");
+
+      if (!text) return toast.error("Didn't catch that. Try again.");
+
+      if (field === "name") {
+        setProduct((p) => ({ ...p, name: text }));
+        return;
+      }
+
+      if (field === "category") {
+        const cat = parseCategoryFromText(text);
+        if (!cat) return toast.error("Say 'Food' or 'Non food'.");
+        setProduct((p) => ({ ...p, category: cat }));
+        return;
+      }
+
+      if (field === "expiryDate") {
+        const iso = parseSpokenDateToISO(text);
+        if (!iso) return toast.error("Say '2025-12-31' or 'tomorrow'.");
+        setProduct((p) => ({ ...p, expiryDate: iso }));
+        return;
+      }
+
+      if (field === "price") {
+        const n = extractFirstNumber(text);
+        if (n == null) return toast.error("Could not find a number for price.");
+        setProduct((p) => ({ ...p, price: String(n) }));
+        return;
+      }
+
+      if (field === "weight") {
+        const n = extractFirstNumber(text);
+        if (n == null) return toast.error("Could not find a number for quantity.");
+        const unit = parseUnitFromText(text);
+        setProduct((p) => ({ ...p, weight: String(n), unit: unit || p.unit }));
+        return;
+      }
+    } catch {
+      toast.dismiss("voice");
+      toast.error("Voice input failed. Try again or type manually.");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -112,21 +189,18 @@ const EditProduct = () => {
       fd.append("category", product.category);
       fd.append("expiryDate", product.expiryDate);
 
-      if (product.price !== "" && product.price !== null && product.price !== undefined) {
+      if (product.price !== "" && product.price != null) {
         const priceInUSD = convertLocalToUSD(parseFloat(product.price), currency);
         fd.append("price", priceInUSD);
       }
 
-      if (product.weight !== "" && product.weight !== null && product.weight !== undefined) {
+      if (product.weight !== "" && product.weight != null) {
         fd.append("weight", product.weight);
         fd.append("unit", product.unit);
       }
 
-      if (file) {
-        fd.append("image", file);
-      } else if (product.image) {
-        fd.append("image", product.image);
-      }
+      if (file) fd.append("image", file);
+      else if (product.image) fd.append("image", product.image);
 
       await productService.updateProduct(id, fd);
       toast.success("Product updated!");
@@ -138,14 +212,15 @@ const EditProduct = () => {
     }
   };
 
-  if (loading) {
-    return <div className="p-8 text-center text-white">Loading product details...</div>;
-  }
+  if (loading) return <div className="p-8 text-center text-white">Loading product details...</div>;
 
   const inputStyle =
     "w-full p-3.5 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-[#38E07B] focus:ring-1 focus:ring-[#38E07B] outline-none transition-all";
   const labelStyle =
     "block text-xs font-bold text-[#38E07B] uppercase tracking-wider mb-2";
+
+  const micBtn =
+    "absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50";
 
   return (
     <div className="max-w-4xl mx-auto pb-12">
@@ -164,17 +239,34 @@ const EditProduct = () => {
         </div>
       </div>
 
+      {voiceSupported && (
+        <div className="mb-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
+          <label className={labelStyle}>Voice Language</label>
+          <select
+            value={voiceLang}
+            onChange={(e) => setVoiceLang(e.target.value)}
+            disabled={listening}
+            className="w-full p-3 bg-black/40 border border-white/10 rounded-xl text-white"
+          >
+            {VOICE_LANGS.map((l) => (
+              <option key={l.code} value={l.code} className="text-black">
+                {l.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-[10px] text-gray-500 mt-2">
+            Use mic buttons to fill fields. If voice fails, type manually.
+          </p>
+        </div>
+      )}
+
       <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
         <form onSubmit={handleSubmit} className="grid md:grid-cols-3 gap-0">
-          {/* Left: Image */}
+          {/* Left image */}
           <div className="p-8 border-b md:border-b-0 md:border-r border-white/10 flex flex-col items-center bg-black/20">
             <div className="w-full aspect-square rounded-xl overflow-hidden bg-black/40 border-2 border-dashed border-white/10 flex items-center justify-center relative group mb-6">
               {preview ? (
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-                />
+                <img src={preview} alt="Preview" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
               ) : (
                 <div className="text-center text-gray-500">
                   <FiImage className="mx-auto text-4xl mb-2" />
@@ -204,76 +296,102 @@ const EditProduct = () => {
             </div>
           </div>
 
-          {/* Right: Form */}
+          {/* Right form */}
           <div className="md:col-span-2 p-8 space-y-6">
             <div className="space-y-6">
-              {/* Name */}
               <div>
                 <label className={labelStyle}>Product Name</label>
-                <input
-                  name="name"
-                  value={product.name}
-                  onChange={handleChange}
-                  className={inputStyle}
-                  required
-                />
-              </div>
-
-              {/* Category + Expiry */}
-              <div className="grid grid-cols-2 gap-6">
-                {/* ✅ Custom dropdown */}
-                <SelectMenu
-                  label="Category"
-                  value={product.category}
-                  onChange={(val) => setProduct((p) => ({ ...p, category: val }))}
-                  options={CATEGORY_OPTIONS}
-                />
-
-                <div>
-                  <label className={labelStyle}>Expiry Date</label>
-                  <input
-                    type="date"
-                    name="expiryDate"
-                    value={product.expiryDate}
-                    onChange={handleChange}
-                    className={inputStyle}
-                    required
-                    min={todayISO}
-                    style={{ colorScheme: "dark" }}
-                  />
+                <div className="relative">
+                  <input name="name" value={product.name} onChange={handleChange} className={inputStyle} required />
+                  {voiceSupported && (
+                    <button type="button" onClick={() => speakToFill("name")} disabled={listening} className={micBtn}>
+                      <FiMic />
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {/* Price + Quantity */}
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className={labelStyle}>Category</label>
+                  <div className="relative">
+                    <SelectMenu
+                      value={product.category}
+                      onChange={(val) => setProduct((p) => ({ ...p, category: val }))}
+                      options={CATEGORY_OPTIONS}
+                    />
+                    {voiceSupported && (
+                      <button type="button" onClick={() => speakToFill("category")} disabled={listening} className={micBtn}>
+                        <FiMic />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelStyle}>Expiry Date</label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      name="expiryDate"
+                      value={product.expiryDate}
+                      onChange={handleChange}
+                      className={inputStyle}
+                      required
+                      min={todayISO}
+                      style={{ colorScheme: "dark" }}
+                    />
+                    {voiceSupported && (
+                      <button type="button" onClick={() => speakToFill("expiryDate")} disabled={listening} className={micBtn}>
+                        <FiMic />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className={labelStyle}>Price ({currency})</label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={product.price}
-                    onChange={handleChange}
-                    className={inputStyle}
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                  />
+                  <div className="relative">
+                    <input
+                      type="number"
+                      name="price"
+                      value={product.price}
+                      onChange={handleChange}
+                      className={inputStyle}
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                    />
+                    {voiceSupported && (
+                      <button type="button" onClick={() => speakToFill("price")} disabled={listening} className={micBtn}>
+                        <FiMic />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div>
                   <label className={labelStyle}>Quantity / Size</label>
                   <div className="flex gap-2">
-                    <input
-                      type="number"
-                      name="weight"
-                      value={product.weight ?? ""}
-                      onChange={handleChange}
-                      className={`${inputStyle} flex-1`}
-                      placeholder="0"
-                      min="0"
-                    />
+                    <div className="relative flex-1">
+                      <input
+                        type="number"
+                        name="weight"
+                        value={product.weight ?? ""}
+                        onChange={handleChange}
+                        className={`${inputStyle} pr-10`}
+                        placeholder="0"
+                        min="0"
+                      />
+                      {voiceSupported && (
+                        <button type="button" onClick={() => speakToFill("weight")} disabled={listening} className={micBtn}>
+                          <FiMic />
+                        </button>
+                      )}
+                    </div>
 
-                    {/* ✅ Custom dropdown for unit */}
                     <SelectMenu
                       value={product.unit}
                       onChange={(val) => setProduct((p) => ({ ...p, unit: val }))}
@@ -285,18 +403,13 @@ const EditProduct = () => {
               </div>
             </div>
 
-            {/* Buttons */}
             <div className="pt-6 flex gap-4 border-t border-white/10 mt-6">
               <button
                 type="submit"
                 disabled={saving}
                 className="flex-1 bg-[#38E07B] text-[#122017] font-bold py-3.5 rounded-xl hover:bg-[#2fc468] transition-all disabled:opacity-70"
               >
-                {saving ? "Saving..." : (
-                  <span className="flex items-center justify-center gap-2">
-                    <FiSave /> Save Changes
-                  </span>
-                )}
+                {saving ? "Saving..." : (<span className="flex items-center justify-center gap-2"><FiSave /> Save Changes</span>)}
               </button>
 
               <button
