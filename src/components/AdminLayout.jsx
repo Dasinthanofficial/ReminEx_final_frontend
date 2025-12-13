@@ -20,7 +20,7 @@ const AdminLayout = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/'); // ✅ go to home instead of /login
+    navigate('/');
   };
 
   const navItems = [

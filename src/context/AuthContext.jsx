@@ -30,7 +30,22 @@ export const AuthProvider = ({ children }) => {
       }
       setLoading(false);
     };
+
     initAuth();
+  }, []);
+
+  // ✅ Listen for axios-triggered logout (401s)
+  useEffect(() => {
+    const onAutoLogout = () => {
+      // token already removed in interceptor, but safe to remove again
+      localStorage.removeItem("token");
+      setUser(null);
+      // optional: toast (commented to avoid spam)
+      // toast.error("Session expired. Please login again.");
+    };
+
+    window.addEventListener("auth:logout", onAutoLogout);
+    return () => window.removeEventListener("auth:logout", onAutoLogout);
   }, []);
 
   const login = async (email, password) => {
@@ -78,11 +93,8 @@ export const AuthProvider = ({ children }) => {
     toast.success("Logged out successfully");
   };
 
-  // ✅ Allow both object and functional updates
   const updateUser = (updater) => {
-    setUser((prev) =>
-      typeof updater === "function" ? updater(prev) : updater
-    );
+    setUser((prev) => (typeof updater === "function" ? updater(prev) : updater));
   };
 
   const changeCurrency = (newCurrency) => {
@@ -109,7 +121,5 @@ export const AuthProvider = ({ children }) => {
     changeCurrency,
   };
 
-  return (
-    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

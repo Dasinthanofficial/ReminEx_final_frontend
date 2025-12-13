@@ -1,31 +1,31 @@
-import React from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-const PrivateRoute = () => {
+const AdminRoute = () => {
   const { user, isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#38E07B]"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#122017]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#38E07B]" />
       </div>
     );
   }
 
-  // Not logged in? → Home
+  // Not logged in -> go login
   if (!isAuthenticated) {
-    return <Navigate to="/" state={{ from: location }} replace />; // ✅ changed from /login
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Admin trying to access user routes? → Admin dashboard
-  if (user?.role === 'admin') {
-    return <Navigate to="/admin" replace />;
+  // Logged in but not admin -> go user dashboard
+  if (user?.role !== "admin") {
+    return <Navigate to="/dashboard" replace />;
   }
 
-  // Regular user → allow
+  // Admin -> allow
   return <Outlet />;
 };
 
-export default PrivateRoute;
+export default AdminRoute;
