@@ -219,8 +219,8 @@ const EditProduct = () => {
   const labelStyle =
     "block text-xs font-bold text-[#38E07B] uppercase tracking-wider mb-2";
 
-  const micBtn =
-    "absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50";
+  const micBtnOuter =
+    "w-12 h-[52px] rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50 flex items-center justify-center";
 
   return (
     <div className="max-w-4xl mx-auto pb-12">
@@ -266,7 +266,11 @@ const EditProduct = () => {
           <div className="p-8 border-b md:border-b-0 md:border-r border-white/10 flex flex-col items-center bg-black/20">
             <div className="w-full aspect-square rounded-xl overflow-hidden bg-black/40 border-2 border-dashed border-white/10 flex items-center justify-center relative group mb-6">
               {preview ? (
-                <img src={preview} alt="Preview" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                />
               ) : (
                 <div className="text-center text-gray-500">
                   <FiImage className="mx-auto text-4xl mb-2" />
@@ -301,10 +305,22 @@ const EditProduct = () => {
             <div className="space-y-6">
               <div>
                 <label className={labelStyle}>Product Name</label>
-                <div className="relative">
-                  <input name="name" value={product.name} onChange={handleChange} className={inputStyle} required />
+                <div className="flex gap-2 items-stretch">
+                  <input
+                    name="name"
+                    value={product.name}
+                    onChange={handleChange}
+                    className={`${inputStyle} flex-1`}
+                    required
+                  />
                   {voiceSupported && (
-                    <button type="button" onClick={() => speakToFill("name")} disabled={listening} className={micBtn}>
+                    <button
+                      type="button"
+                      onClick={() => speakToFill("name")}
+                      disabled={listening}
+                      className={micBtnOuter}
+                      title="Voice: name"
+                    >
                       <FiMic />
                     </button>
                   )}
@@ -314,14 +330,22 @@ const EditProduct = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className={labelStyle}>Category</label>
-                  <div className="relative">
-                    <SelectMenu
-                      value={product.category}
-                      onChange={(val) => setProduct((p) => ({ ...p, category: val }))}
-                      options={CATEGORY_OPTIONS}
-                    />
+                  <div className="flex gap-2 items-stretch">
+                    <div className="flex-1">
+                      <SelectMenu
+                        value={product.category}
+                        onChange={(val) => setProduct((p) => ({ ...p, category: val }))}
+                        options={CATEGORY_OPTIONS}
+                      />
+                    </div>
                     {voiceSupported && (
-                      <button type="button" onClick={() => speakToFill("category")} disabled={listening} className={micBtn}>
+                      <button
+                        type="button"
+                        onClick={() => speakToFill("category")}
+                        disabled={listening}
+                        className={micBtnOuter}
+                        title="Voice: category"
+                      >
                         <FiMic />
                       </button>
                     )}
@@ -330,19 +354,25 @@ const EditProduct = () => {
 
                 <div>
                   <label className={labelStyle}>Expiry Date</label>
-                  <div className="relative">
+                  <div className="flex gap-2 items-stretch">
                     <input
                       type="date"
                       name="expiryDate"
                       value={product.expiryDate}
                       onChange={handleChange}
-                      className={inputStyle}
+                      className={`${inputStyle} flex-1`}
                       required
                       min={todayISO}
                       style={{ colorScheme: "dark" }}
                     />
                     {voiceSupported && (
-                      <button type="button" onClick={() => speakToFill("expiryDate")} disabled={listening} className={micBtn}>
+                      <button
+                        type="button"
+                        onClick={() => speakToFill("expiryDate")}
+                        disabled={listening}
+                        className={micBtnOuter}
+                        title="Voice: expiry date"
+                      >
                         <FiMic />
                       </button>
                     )}
@@ -353,19 +383,25 @@ const EditProduct = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className={labelStyle}>Price ({currency})</label>
-                  <div className="relative">
+                  <div className="flex gap-2 items-stretch">
                     <input
                       type="number"
                       name="price"
                       value={product.price}
                       onChange={handleChange}
-                      className={inputStyle}
+                      className={`${inputStyle} flex-1`}
                       placeholder="0.00"
                       step="0.01"
                       min="0"
                     />
                     {voiceSupported && (
-                      <button type="button" onClick={() => speakToFill("price")} disabled={listening} className={micBtn}>
+                      <button
+                        type="button"
+                        onClick={() => speakToFill("price")}
+                        disabled={listening}
+                        className={micBtnOuter}
+                        title="Voice: price"
+                      >
                         <FiMic />
                       </button>
                     )}
@@ -374,30 +410,36 @@ const EditProduct = () => {
 
                 <div>
                   <label className={labelStyle}>Quantity / Size</label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
+                  <div className="flex gap-2 items-stretch">
+                    <div className="flex gap-2 flex-1">
                       <input
                         type="number"
                         name="weight"
                         value={product.weight ?? ""}
                         onChange={handleChange}
-                        className={`${inputStyle} pr-10`}
+                        className={`${inputStyle} flex-1`}
                         placeholder="0"
                         min="0"
                       />
-                      {voiceSupported && (
-                        <button type="button" onClick={() => speakToFill("weight")} disabled={listening} className={micBtn}>
-                          <FiMic />
-                        </button>
-                      )}
+                      <SelectMenu
+                        value={product.unit}
+                        onChange={(val) => setProduct((p) => ({ ...p, unit: val }))}
+                        options={UNIT_OPTIONS}
+                        className="w-28"
+                      />
                     </div>
 
-                    <SelectMenu
-                      value={product.unit}
-                      onChange={(val) => setProduct((p) => ({ ...p, unit: val }))}
-                      options={UNIT_OPTIONS}
-                      className="w-28"
-                    />
+                    {voiceSupported && (
+                      <button
+                        type="button"
+                        onClick={() => speakToFill("weight")}
+                        disabled={listening}
+                        className={micBtnOuter}
+                        title="Voice: quantity"
+                      >
+                        <FiMic />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -409,7 +451,11 @@ const EditProduct = () => {
                 disabled={saving}
                 className="flex-1 bg-[#38E07B] text-[#122017] font-bold py-3.5 rounded-xl hover:bg-[#2fc468] transition-all disabled:opacity-70"
               >
-                {saving ? "Saving..." : (<span className="flex items-center justify-center gap-2"><FiSave /> Save Changes</span>)}
+                {saving ? "Saving..." : (
+                  <span className="flex items-center justify-center gap-2">
+                    <FiSave /> Save Changes
+                  </span>
+                )}
               </button>
 
               <button

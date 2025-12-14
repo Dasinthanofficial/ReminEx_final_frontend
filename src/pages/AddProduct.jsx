@@ -10,7 +10,6 @@ import { useAuth } from "../context/AuthContext";
 import { convertLocalToUSD } from "../utils/currencyHelper";
 import SelectMenu from "../components/SelectMenu";
 
-// ✅ alias import to avoid any naming conflicts
 import { useSpeechRecognition as useSpeechRecognitionHook } from "../hooks/useSpeechRecognition.js";
 import {
   extractFirstNumber,
@@ -151,10 +150,8 @@ const AddProduct = () => {
     const f = e.target.files?.[0];
     if (!f) return;
 
-    if (!f.type.startsWith("image/"))
-      return toast.error("Please upload an image file");
-    if (f.size > 5 * 1024 * 1024)
-      return toast.error("Image must be under 5MB");
+    if (!f.type.startsWith("image/")) return toast.error("Please upload an image file");
+    if (f.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
 
     setFile(f);
 
@@ -207,8 +204,7 @@ const AddProduct = () => {
 
       if (field === "weight") {
         const n = extractFirstNumber(text);
-        if (n == null)
-          return toast.error("Could not find a number for quantity.");
+        if (n == null) return toast.error("Could not find a number for quantity.");
         const unit = parseUnitFromText(text);
         setForm((p) => ({ ...p, weight: String(n), unit: unit || p.unit }));
         return;
@@ -335,8 +331,9 @@ const AddProduct = () => {
   const labelStyle =
     "block text-xs font-bold text-[#38E07B] uppercase tracking-wider mb-2";
 
-  const micBtn =
-    "absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50";
+  // ✅ Mic button style (outside input)
+  const micBtnOuter =
+    "w-12 h-[52px] rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50 flex items-center justify-center";
 
   return (
     <div className="max-w-3xl mx-auto p-8 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl my-8">
@@ -415,17 +412,23 @@ const AddProduct = () => {
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className={labelStyle}>Product Name</label>
-            <div className="relative">
+            <div className="flex gap-2 items-stretch">
               <input
                 name="name"
                 value={form.name}
                 onChange={handleChange}
                 placeholder="Milk, Apples..."
-                className={inputStyle}
+                className={`${inputStyle} flex-1`}
                 required
               />
               {voiceSupported && (
-                <button type="button" onClick={() => speakToFill("name")} disabled={listening} className={micBtn}>
+                <button
+                  type="button"
+                  onClick={() => speakToFill("name")}
+                  disabled={listening}
+                  className={micBtnOuter}
+                  title="Voice: name"
+                >
                   <FiMic />
                 </button>
               )}
@@ -434,14 +437,22 @@ const AddProduct = () => {
 
           <div>
             <label className={labelStyle}>Category</label>
-            <div className="relative">
-              <SelectMenu
-                value={form.category}
-                onChange={(val) => setForm((p) => ({ ...p, category: val }))}
-                options={CATEGORY_OPTIONS}
-              />
+            <div className="flex gap-2 items-stretch">
+              <div className="flex-1">
+                <SelectMenu
+                  value={form.category}
+                  onChange={(val) => setForm((p) => ({ ...p, category: val }))}
+                  options={CATEGORY_OPTIONS}
+                />
+              </div>
               {voiceSupported && (
-                <button type="button" onClick={() => speakToFill("category")} disabled={listening} className={micBtn}>
+                <button
+                  type="button"
+                  onClick={() => speakToFill("category")}
+                  disabled={listening}
+                  className={micBtnOuter}
+                  title="Voice: category"
+                >
                   <FiMic />
                 </button>
               )}
@@ -449,10 +460,10 @@ const AddProduct = () => {
           </div>
         </div>
 
-        {/* Expiry */}
+        {/* ✅ Expiry (FIXED: mic outside date input so it won't overlap calendar icon) */}
         <div>
           <label className={labelStyle}>Expiry Date</label>
-          <div className="relative">
+          <div className="flex gap-2 items-stretch">
             <input
               type="date"
               name="expiryDate"
@@ -460,11 +471,17 @@ const AddProduct = () => {
               onChange={handleChange}
               required
               min={todayISO}
-              className={inputStyle}
+              className={`${inputStyle} flex-1`}
               style={{ colorScheme: "dark" }}
             />
             {voiceSupported && (
-              <button type="button" onClick={() => speakToFill("expiryDate")} disabled={listening} className={micBtn}>
+              <button
+                type="button"
+                onClick={() => speakToFill("expiryDate")}
+                disabled={listening}
+                className={micBtnOuter}
+                title="Voice: expiry date"
+              >
                 <FiMic />
               </button>
             )}
@@ -475,19 +492,25 @@ const AddProduct = () => {
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className={labelStyle}>Price ({currency})</label>
-            <div className="relative">
+            <div className="flex gap-2 items-stretch">
               <input
                 type="number"
                 name="price"
                 value={form.price}
                 onChange={handleChange}
                 placeholder="0.00"
-                className={inputStyle}
+                className={`${inputStyle} flex-1`}
                 step="0.01"
                 min="0"
               />
               {voiceSupported && (
-                <button type="button" onClick={() => speakToFill("price")} disabled={listening} className={micBtn}>
+                <button
+                  type="button"
+                  onClick={() => speakToFill("price")}
+                  disabled={listening}
+                  className={micBtnOuter}
+                  title="Voice: price"
+                >
                   <FiMic />
                 </button>
               )}
@@ -496,30 +519,36 @@ const AddProduct = () => {
 
           <div>
             <label className={labelStyle}>Quantity / Size</label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
+            <div className="flex gap-2 items-stretch">
+              <div className="flex gap-2 flex-1">
                 <input
                   type="number"
                   name="weight"
                   value={form.weight}
                   onChange={handleChange}
                   placeholder="500"
-                  className={`${inputStyle} pr-10`}
+                  className={`${inputStyle} flex-1`}
                   min="0"
                 />
-                {voiceSupported && (
-                  <button type="button" onClick={() => speakToFill("weight")} disabled={listening} className={micBtn}>
-                    <FiMic />
-                  </button>
-                )}
+                <SelectMenu
+                  value={form.unit}
+                  onChange={(val) => setForm((p) => ({ ...p, unit: val }))}
+                  options={UNIT_OPTIONS}
+                  className="w-28"
+                />
               </div>
 
-              <SelectMenu
-                value={form.unit}
-                onChange={(val) => setForm((p) => ({ ...p, unit: val }))}
-                options={UNIT_OPTIONS}
-                className="w-28"
-              />
+              {voiceSupported && (
+                <button
+                  type="button"
+                  onClick={() => speakToFill("weight")}
+                  disabled={listening}
+                  className={micBtnOuter}
+                  title="Voice: quantity"
+                >
+                  <FiMic />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -539,15 +568,20 @@ const AddProduct = () => {
                   onChange={handleFile}
                   className="absolute inset-0 opacity-0 cursor-pointer z-10"
                 />
-
                 {preview ? (
-                  <img src={preview} alt="Preview" className="w-full h-full object-cover rounded-lg border border-white/10" />
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="w-full h-full object-cover rounded-lg border border-white/10"
+                  />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-center">
                     <div className="w-12 h-12 rounded-full bg-[#38E07B]/10 flex items-center justify-center mb-3 text-[#38E07B]">
                       <FiUpload className="text-xl" />
                     </div>
-                    <span className="text-sm text-gray-300">Tap to capture or upload produce photo</span>
+                    <span className="text-sm text-gray-300">
+                      Tap to capture or upload produce photo
+                    </span>
                   </div>
                 )}
               </div>
