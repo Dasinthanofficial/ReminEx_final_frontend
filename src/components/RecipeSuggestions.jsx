@@ -15,6 +15,9 @@ import toast from "react-hot-toast";
 import api from "../services/api";
 import { productService } from "../services/productService";
 
+// ✅ use your custom dropdown for better UI
+import SelectMenu from "./SelectMenu";
+
 const LANG_OPTIONS = [
   { code: "Tamil", label: "Tamil" },
   { code: "Sinhala", label: "Sinhala" },
@@ -46,18 +49,12 @@ const RecipeSuggestions = () => {
 
   const queryClient = useQueryClient();
 
-  // -------------------------
-  // Suggestions Query (only when tab active)
-  // -------------------------
-  const recipeUrl = useMemo(() => buildRecipeUrl({ limit, force: false }), [limit]);
+  const recipeUrl = useMemo(
+    () => buildRecipeUrl({ limit, force: false }),
+    [limit]
+  );
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    isFetching,
-  } = useQuery({
+  const { data, isLoading, isError, error, isFetching } = useQuery({
     queryKey: ["recipeSuggestions", limit],
     queryFn: () => api.post(recipeUrl),
     enabled: activeTab === "suggestions",
@@ -68,25 +65,20 @@ const RecipeSuggestions = () => {
   const hasRecipes =
     data?.success && Array.isArray(data.recipes) && data.recipes.length > 0;
 
-  // -------------------------
   // Regenerate (force=1)
-  // -------------------------
   const regenMutation = useMutation({
     mutationFn: () => api.post(buildRecipeUrl({ limit, force: true })),
     onSuccess: (newData) => {
-      // Update query cache immediately so UI refreshes
       queryClient.setQueryData(["recipeSuggestions", limit], newData);
       toast.success("Recipes regenerated!");
-      setTranslations({}); // optional: clear old translations
+      setTranslations({});
     },
     onError: (err) => {
       toast.error(err?.response?.data?.message || "Failed to regenerate recipes");
     },
   });
 
-  // -------------------------
   // Saved recipes
-  // -------------------------
   const {
     data: savedRecipes = [],
     isLoading: savedLoading,
@@ -97,9 +89,6 @@ const RecipeSuggestions = () => {
     enabled: activeTab === "saved",
   });
 
-  // -------------------------
-  // Save / Delete saved recipe
-  // -------------------------
   const saveMutation = useMutation({
     mutationFn: productService.saveRecipe,
     onSuccess: () => {
@@ -122,9 +111,6 @@ const RecipeSuggestions = () => {
     },
   });
 
-  // -------------------------
-  // Translate
-  // -------------------------
   const handleTranslate = async (recipeId, originalText, langName) => {
     setTranslations((prev) => ({
       ...prev,
@@ -154,7 +140,6 @@ const RecipeSuggestions = () => {
     }
   };
 
-  // Save handler
   const handleSave = (item) => {
     const t = translations[item.id] || {};
     const textToSave = t.text || item.recipe;
@@ -199,7 +184,9 @@ const RecipeSuggestions = () => {
               className="px-3 py-1 rounded-full text-xs font-bold border border-white/10 bg-white/5 hover:bg-white/10 text-white flex items-center gap-2 disabled:opacity-60"
               title="Regenerate recipes"
             >
-              <FiRefreshCw className={regenMutation.isPending ? "animate-spin" : ""} />
+              <FiRefreshCw
+                className={regenMutation.isPending ? "animate-spin" : ""}
+              />
               Regenerate
             </button>
           )}
@@ -237,24 +224,24 @@ const RecipeSuggestions = () => {
             {isFetching && <span className="text-gray-500">Updating…</span>}
             {data?.count != null && (
               <span>
-                Showing <span className="text-gray-200 font-bold">{data.count}</span>
+                Showing{" "}
+                <span className="text-gray-200 font-bold">{data.count}</span>
               </span>
             )}
           </div>
 
+          {/* ✅ FIXED UI: use SelectMenu instead of native select */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400">Amount:</span>
-            <select
-              value={limit}
-              onChange={(e) => setLimit(e.target.value)}
-              className="bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
-            >
-              {LIMIT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value} className="text-black">
-                  {o.label}
-                </option>
-              ))}
-            </select>
+            <div className="w-56 relative z-[9999]">
+              <SelectMenu
+                value={limit}
+                onChange={(val) => setLimit(val)}
+                options={LIMIT_OPTIONS}
+                size="sm"
+                maxHeight="max-h-56"
+              />
+            </div>
           </div>
         </div>
       )}
@@ -350,7 +337,9 @@ const RecipeSuggestions = () => {
                             {LANG_OPTIONS.map((lang) => (
                               <button
                                 key={lang.code}
-                                onClick={() => handleTranslate(item.id, item.recipe, lang.code)}
+                                onClick={() =>
+                                  handleTranslate(item.id, item.recipe, lang.code)
+                                }
                                 disabled={t.loading || t.lang === lang.code}
                                 className={`
                                   px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all border flex-shrink-0
