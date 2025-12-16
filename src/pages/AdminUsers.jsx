@@ -48,11 +48,10 @@ const AdminUsers = () => {
     }
   };
 
-  const filteredUsers = users.filter((user) =>
-    (user.name + user.email)
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers =
+    users.filter((user) =>
+      (user.name + user.email).toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
 
   if (isLoading)
     return <div className="p-8 text-center text-white">Loading users...</div>;
@@ -65,7 +64,9 @@ const AdminUsers = () => {
           <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
             User Management
           </h1>
-          <p className="text-gray-400 text-sm mt-1">Manage system access and roles.</p>
+          <p className="text-gray-400 text-sm mt-1">
+            Manage system access and roles.
+          </p>
         </div>
         <div className="relative w-full md:w-auto">
           <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -107,13 +108,16 @@ const AdminUsers = () => {
                         <div className="font-bold text-white text-sm">
                           {user.name}
                         </div>
-                        <div className="text-xs text-gray-500">{user.email}</div>
+                        <div className="text-xs text-gray-500">
+                          {user.email}
+                        </div>
                       </div>
                     </div>
                   </td>
 
                   {/* Role */}
                   <td className="px-6 py-4">
+                    {/* If not superadmin OR it's your own row → static badge */}
                     {!isSuperAdmin || currentUser?.id === user._id ? (
                       <span
                         className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded-lg border ${
@@ -127,6 +131,7 @@ const AdminUsers = () => {
                         {user.role}
                       </span>
                     ) : (
+                      // Super admin can change role of others
                       <select
                         value={user.role}
                         onChange={(e) =>
@@ -164,6 +169,7 @@ const AdminUsers = () => {
 
                   {/* Actions */}
                   <td className="px-6 py-4 text-right">
+                    {/* Only allow delete for normal users (role === user) */}
                     {user.role === "user" && (
                       <button
                         onClick={() => handleDelete(user._id)}
@@ -179,6 +185,7 @@ const AdminUsers = () => {
             </tbody>
           </table>
         </div>
+
         {filteredUsers.length === 0 && (
           <div className="p-12 text-center text-gray-500">
             No users found matching your search.
