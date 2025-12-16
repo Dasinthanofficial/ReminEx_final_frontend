@@ -14,8 +14,6 @@ import { GiCookingPot } from "react-icons/gi";
 import toast from "react-hot-toast";
 import api from "../services/api";
 import { productService } from "../services/productService";
-
-// ✅ use your custom dropdown for better UI
 import SelectMenu from "./SelectMenu";
 
 const LANG_OPTIONS = [
@@ -34,6 +32,7 @@ const LIMIT_OPTIONS = [
   { value: "50", label: "50 items" },
 ];
 
+// Build URL with optional limit & force flags
 const buildRecipeUrl = ({ limit = "all", force = false } = {}) => {
   const params = new URLSearchParams();
   if (force) params.set("force", "1");
@@ -54,7 +53,13 @@ const RecipeSuggestions = () => {
     [limit]
   );
 
-  const { data, isLoading, isError, error, isFetching } = useQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    isFetching,
+  } = useQuery({
     queryKey: ["recipeSuggestions", limit],
     queryFn: () => api.post(recipeUrl),
     enabled: activeTab === "suggestions",
@@ -65,7 +70,7 @@ const RecipeSuggestions = () => {
   const hasRecipes =
     data?.success && Array.isArray(data.recipes) && data.recipes.length > 0;
 
-  // Regenerate (force=1)
+  // Regenerate (force=1) - bypass cache & overwrite
   const regenMutation = useMutation({
     mutationFn: () => api.post(buildRecipeUrl({ limit, force: true })),
     onSuccess: (newData) => {
@@ -74,7 +79,9 @@ const RecipeSuggestions = () => {
       setTranslations({});
     },
     onError: (err) => {
-      toast.error(err?.response?.data?.message || "Failed to regenerate recipes");
+      toast.error(
+        err?.response?.data?.message || "Failed to regenerate recipes"
+      );
     },
   });
 
@@ -107,7 +114,9 @@ const RecipeSuggestions = () => {
       queryClient.invalidateQueries({ queryKey: ["savedRecipes"] });
     },
     onError: (err) => {
-      toast.error(err?.response?.data?.message || "Failed to delete saved recipe");
+      toast.error(
+        err?.response?.data?.message || "Failed to delete saved recipe"
+      );
     },
   });
 
@@ -230,7 +239,6 @@ const RecipeSuggestions = () => {
             )}
           </div>
 
-          {/* ✅ FIXED UI: use SelectMenu instead of native select */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400">Amount:</span>
             <div className="w-56 relative z-[9999]">
@@ -258,7 +266,8 @@ const RecipeSuggestions = () => {
                   Generating recipes from your inventory...
                 </p>
                 <p className="text-[11px] text-gray-500">
-                  First time may be slower. Next time is fast because recipes are cached.
+                  First time may be slower. Next time is fast because recipes are
+                  cached.
                 </p>
               </div>
             )}

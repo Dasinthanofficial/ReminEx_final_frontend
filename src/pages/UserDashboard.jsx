@@ -16,6 +16,7 @@ import { useAuth } from "../context/AuthContext";
 import { formatPrice } from "../utils/currencyHelper";
 import RecipeSuggestions from "../components/RecipeSuggestions";
 import MonthlyReport from "../components/MonthlyReport";
+import NotificationBell from "../components/NotificationBell"; // 🟢 NEW
 
 const startOfToday = () => {
   const t = new Date();
@@ -75,6 +76,9 @@ const UserDashboard = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* 🟢 Notification bell */}
+          <NotificationBell />
+
           <div className="text-xs md:text-sm text-[#38E07B] font-medium bg-[#38E07B]/10 px-3 md:px-4 py-1.5 md:py-2 rounded-lg border border-[#38E07B]/20">
             {format(today, "EEEE, MMM do")}
           </div>
@@ -209,7 +213,7 @@ const UserDashboard = () => {
           )}
         </div>
 
-        {/* Right (✅ fixed) */}
+        {/* Right */}
         <div className="h-auto self-start lg:sticky lg:top-24">
           {isPremium ? (
             <MonthlyReport />
