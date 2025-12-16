@@ -118,7 +118,7 @@ export const AuthProvider = ({ children }) => {
   updateUser,
   isAuthenticated,
   isAdmin,
-  isSuperAdmin,   // 👈 add
+  isSuperAdmin,   
   isPremium,
   currency,
   changeCurrency,

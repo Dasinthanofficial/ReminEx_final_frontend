@@ -1,10 +1,33 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FiTrash2, FiSearch } from "react-icons/fi";
+import { FiTrash2, FiSearch, FiChevronDown } from "react-icons/fi";
 import api from "../services/api";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { useAuth } from "../context/AuthContext";
+
+const getRoleStyles = (role) => {
+  switch (role) {
+    case "superadmin":
+      return {
+        bg: "bg-pink-500/20",
+        text: "text-pink-300",
+        border: "border-pink-500/30",
+      };
+    case "admin":
+      return {
+        bg: "bg-purple-500/20",
+        text: "text-purple-300",
+        border: "border-purple-500/30",
+      };
+    default:
+      return {
+        bg: "bg-blue-500/20",
+        text: "text-blue-300",
+        border: "border-blue-500/30",
+      };
+  }
+};
 
 const AdminUsers = () => {
   const queryClient = useQueryClient();
@@ -94,94 +117,114 @@ const AdminUsers = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {filteredUsers.map((user) => (
-                <tr key={user._id} className="hover:bg-white/[0.02] transition">
-                  {/* User */}
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#38E07B] to-emerald-900 p-[2px]">
-                        <div className="w-full h-full rounded-full bg-[#122017] flex items-center justify-center text-white font-bold text-sm">
-                          {user.name.charAt(0)}
-                        </div>
-                      </div>
-                      <div className="ml-3">
-                        <div className="font-bold text-white text-sm">
-                          {user.name}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {user.email}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
+              {filteredUsers.map((user) => {
+                const isSelf =
+                  currentUser && currentUser.email === user.email;
+                const { bg, text, border } = getRoleStyles(user.role);
 
-                  {/* Role */}
-                  <td className="px-6 py-4">
-                    {/* If not superadmin OR it's your own row → static badge */}
-                    {!isSuperAdmin || currentUser?.id === user._id ? (
+                return (
+                  <tr
+                    key={user._id}
+                    className="hover:bg-white/[0.02] transition"
+                  >
+                    {/* User */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#38E07B] to-emerald-900 p-[2px]">
+                          <div className="w-full h-full rounded-full bg-[#122017] flex items-center justify-center text-white font-bold text-sm">
+                            {user.name.charAt(0)}
+                          </div>
+                        </div>
+                        <div className="ml-3">
+                          <div className="font-bold text-white text-sm">
+                            {user.name}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {user.email}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Role */}
+                    <td className="px-6 py-4">
+                      {isSuperAdmin ? (
+                        // Styled role selector for superadmin
+                        <div
+                          className={`inline-flex items-center relative rounded-lg border ${bg} ${text} ${border} px-2 pr-6 py-1 text-[10px] font-bold uppercase tracking-wide`}
+                        >
+                          <select
+                            value={user.role}
+                            disabled={isSelf}
+                            onChange={(e) =>
+                              roleMutation.mutate({
+                                id: user._id,
+                                role: e.target.value,
+                              })
+                            }
+                            className={`appearance-none bg-transparent border-none outline-none text-current text-[10px] font-bold uppercase tracking-wide pr-4 cursor-pointer ${
+                              isSelf
+                                ? "cursor-not-allowed opacity-70"
+                                : "cursor-pointer"
+                            }`}
+                          >
+                            <option value="user" className="text-black">
+                              User
+                            </option>
+                            <option value="admin" className="text-black">
+                              Admin
+                            </option>
+                            <option value="superadmin" className="text-black">
+                              Superadmin
+                            </option>
+                          </select>
+                          {/* Custom arrow */}
+                          <FiChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[11px]" />
+                        </div>
+                      ) : (
+                        // non-superadmin sees badge only
+                        <span
+                          className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded-lg border ${bg} ${text} ${border}`}
+                        >
+                          {user.role}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Plan */}
+                    <td className="px-6 py-4">
                       <span
                         className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded-lg border ${
-                          user.role === "superadmin"
-                            ? "bg-pink-500/20 text-pink-300 border-pink-500/30"
-                            : user.role === "admin"
-                            ? "bg-purple-500/20 text-purple-300 border-purple-500/30"
-                            : "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                          user.plan === "Free"
+                            ? "bg-gray-500/20 text-gray-400 border-gray-500/30"
+                            : "bg-[#38E07B]/20 text-[#38E07B] border-[#38E07B]/30"
                         }`}
                       >
-                        {user.role}
+                        {user.plan}
                       </span>
-                    ) : (
-                      // Super admin can change role of others
-                      <select
-                        value={user.role}
-                        onChange={(e) =>
-                          roleMutation.mutate({
-                            id: user._id,
-                            role: e.target.value,
-                          })
-                        }
-                        className="bg-black/40 border border-white/10 text-xs text-white rounded-lg px-2 py-1 outline-none focus:border-[#38E07B] cursor-pointer"
-                      >
-                        <option value="user">user</option>
-                        <option value="admin">admin</option>
-                        <option value="superadmin">superadmin</option>
-                      </select>
-                    )}
-                  </td>
+                    </td>
 
-                  {/* Plan */}
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded-lg border ${
-                        user.plan === "Free"
-                          ? "bg-gray-500/20 text-gray-400 border-gray-500/30"
-                          : "bg-[#38E07B]/20 text-[#38E07B] border-[#38E07B]/30"
-                      }`}
-                    >
-                      {user.plan}
-                    </span>
-                  </td>
+                    {/* Joined */}
+                    <td className="px-6 py-4 text-xs text-gray-400 font-mono">
+                      {format(new Date(user.createdAt), "MMM dd, yyyy")}
+                    </td>
 
-                  {/* Joined */}
-                  <td className="px-6 py-4 text-xs text-gray-400 font-mono">
-                    {format(new Date(user.createdAt), "MMM dd, yyyy")}
-                  </td>
-
-                  {/* Actions */}
-                  <td className="px-6 py-4 text-right">
-                    {/* Only allow delete for normal users (role === user) */}
-                    {user.role === "user" && (
-                      <button
-                        onClick={() => handleDelete(user._id)}
-                        className="text-red-400 hover:text-white hover:bg-red-500 p-2 rounded-lg transition-all"
-                        title="Delete user"
-                      >
-                        <FiTrash2 />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    {/* Actions */}
+                    <td className="px-6 py-4 text-right">
+                      {/* Only allow delete for normal users (role === user) */}
+                      {user.role === "user" && (
+                        <button
+                          onClick={() => handleDelete(user._id)}
+                          className="text-red-400 hover:text-white hover:bg-red-500 p-2 rounded-lg transition-all"
+                          title="Delete user"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

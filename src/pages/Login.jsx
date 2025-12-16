@@ -1,3 +1,4 @@
+// src/pages/Login.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -19,11 +20,9 @@ const Login = () => {
     setIsLoading(true);
     try {
       const response = await login(data.email, data.password);
-      if (response.user.role === 'admin') {
-        navigate('/admin', { replace: true });      // 👈 use replace
-      } else {
-        navigate('/dashboard', { replace: true });  // 👈 use replace
-      }
+      const isAdminRole = ['admin', 'superadmin'].includes(response.user.role);
+
+      navigate(isAdminRole ? '/admin' : '/dashboard', { replace: true });
     } catch (error) {
       console.error('Login error:', error);
     } finally {
@@ -44,11 +43,9 @@ const Login = () => {
       callback: async (googleRes) => {
         try {
           const response = await loginWithGoogle(googleRes.credential);
-          if (response.user.role === 'admin') {
-            navigate('/admin', { replace: true });      // 👈 use replace
-          } else {
-            navigate('/dashboard', { replace: true });  // 👈 use replace
-          }
+          const isAdminRole = ['admin', 'superadmin'].includes(response.user.role);
+
+          navigate(isAdminRole ? '/admin' : '/dashboard', { replace: true });
         } catch (err) {
           console.error(err);
           toast.error("Google login failed");
