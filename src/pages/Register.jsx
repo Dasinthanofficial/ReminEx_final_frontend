@@ -23,7 +23,7 @@ const Register = () => {
     setIsLoading(true);
     try {
       await registerUser(data);
-      navigate('/dashboard', { replace: true });  // 👈 use replace
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       console.error('Registration error:', error);
     } finally {
@@ -42,7 +42,7 @@ const Register = () => {
       callback: async (response) => {
         try {
           await loginWithGoogle(response.credential);
-          navigate('/dashboard', { replace: true });  // 👈 use replace
+          navigate('/dashboard', { replace: true });
         } catch (err) {
           console.error(err);
         } finally {
@@ -175,7 +175,18 @@ const Register = () => {
                   <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#38E07B] transition-colors text-lg" />
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    {...register('password', { required: 'Required', minLength: { value: 6, message: 'Min 6 chars' } })}
+                    {...register('password', {
+                      required: 'Password is required',
+                      minLength: { value: 6, message: 'Min 6 characters' },
+                      validate: {
+                        hasUpper: (v) =>
+                          /[A-Z]/.test(v) || 'Must contain an uppercase letter',
+                        hasLower: (v) =>
+                          /[a-z]/.test(v) || 'Must contain a lowercase letter',
+                        hasNumber: (v) =>
+                          /[0-9]/.test(v) || 'Must contain a number',
+                      },
+                    })}
                     className={`w-full pl-12 pr-10 py-3 bg-white/5 border ${errors.password ? 'border-red-500 focus:border-red-500' : 'border-white/10 focus:border-[#38E07B]'} rounded-xl text-white placeholder-gray-600 outline-none focus:ring-4 focus:ring-[#38E07B]/10 transition-all text-sm md:text-base`}
                     placeholder="••••••"
                   />

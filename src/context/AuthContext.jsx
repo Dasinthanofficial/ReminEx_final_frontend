@@ -7,6 +7,23 @@ const AuthContext = createContext({});
 
 export const useAuth = () => useContext(AuthContext);
 
+// Helper to extract best error message from API response
+const getApiErrorMessage = (err, fallback = "Something went wrong") => {
+  const data = err?.response?.data;
+  if (!data) return fallback;
+
+  // Prefer first field error if available (from validators.js)
+  if (Array.isArray(data.errors) && data.errors[0]?.message) {
+    return data.errors[0].message;
+  }
+
+  if (typeof data.message === "string") {
+    return data.message;
+  }
+
+  return fallback;
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,10 +54,9 @@ export const AuthProvider = ({ children }) => {
   // ✅ Listen for axios-triggered logout (401s)
   useEffect(() => {
     const onAutoLogout = () => {
-      // token already removed in interceptor, but safe to remove again
       localStorage.removeItem("token");
       setUser(null);
-      // optional: toast (commented to avoid spam)
+      // optional: toast
       // toast.error("Session expired. Please login again.");
     };
 
@@ -56,7 +72,7 @@ export const AuthProvider = ({ children }) => {
       toast.success("Login successful!");
       return res;
     } catch (err) {
-      toast.error(err.response?.data?.message || "Login failed");
+      toast.error(getApiErrorMessage(err, "Login failed"));
       throw err;
     }
   };
@@ -69,7 +85,7 @@ export const AuthProvider = ({ children }) => {
       toast.success("Registration successful!");
       return res;
     } catch (err) {
-      toast.error(err.response?.data?.message || "Registration failed");
+      toast.error(getApiErrorMessage(err, "Registration failed"));
       throw err;
     }
   };
@@ -82,7 +98,7 @@ export const AuthProvider = ({ children }) => {
       toast.success("Signed in with Google!");
       return res;
     } catch (err) {
-      toast.error(err.response?.data?.message || "Google sign‑in failed");
+      toast.error(getApiErrorMessage(err, "Google sign-in failed"));
       throw err;
     }
   };
@@ -102,26 +118,26 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("currency", newCurrency);
   };
 
-
   const isAuthenticated = !!user;
   const isAdmin = ["admin", "superadmin"].includes(user?.role);
   const isSuperAdmin = user?.role === "superadmin";
   const isPremium = ["Monthly", "Yearly"].includes(user?.plan);
- 
+
   const value = {
-  user,
-  loading,
-  login,
-  register,
-  logout,
-  loginWithGoogle,
-  updateUser,
-  isAuthenticated,
-  isAdmin,
-  isSuperAdmin,   
-  isPremium,
-  currency,
-  changeCurrency,
-};
+    user,
+    loading,
+    login,
+    register,
+    logout,
+    loginWithGoogle,
+    updateUser,
+    isAuthenticated,
+    isAdmin,
+    isSuperAdmin,
+    isPremium,
+    currency,
+    changeCurrency,
+  };
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
