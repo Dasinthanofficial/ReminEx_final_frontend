@@ -102,24 +102,26 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("currency", newCurrency);
   };
 
+
   const isAuthenticated = !!user;
-  const isAdmin = user?.role === "admin";
+  const isAdmin = ["admin", "superadmin"].includes(user?.role);
+  const isSuperAdmin = user?.role === "superadmin";
   const isPremium = ["Monthly", "Yearly"].includes(user?.plan);
-
+ 
   const value = {
-    user,
-    loading,
-    login,
-    register,
-    logout,
-    loginWithGoogle,
-    updateUser,
-    isAuthenticated,
-    isAdmin,
-    isPremium,
-    currency,
-    changeCurrency,
-  };
-
+  user,
+  loading,
+  login,
+  register,
+  logout,
+  loginWithGoogle,
+  updateUser,
+  isAuthenticated,
+  isAdmin,
+  isSuperAdmin,   // 👈 add
+  isPremium,
+  currency,
+  changeCurrency,
+};
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -18,7 +18,7 @@ const Footer = () => {
       <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-[150px] opacity-10" />
 
       {/* Content Container */}
-      <div className="container mx-auto px-6 relative z-10 ">
+      <div className="container mx-auto px-6 relative z-10 text-center">
         {/* Main Sections */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16 place-items-center">
           {/* 1. Brand Section */}
