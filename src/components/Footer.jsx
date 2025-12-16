@@ -67,7 +67,7 @@ const Footer = () => {
               </li>
               <li className="flex items-center gap-3 group">
                 <FiPhone className="text-[#38E07B] group-hover:rotate-12 transition-transform" />
-                <a href="tel:+15551234567" className="hover:text-white transition-colors">+1 (555) 123-4567</a>
+                <a href="tel:+15551234567" className="hover:text-white transition-colors">+94 123456789</a>
               </li>
               <li className="flex items-center gap-3 group">
                 <FiMail className="text-[#38E07B] group-hover:scale-110 transition-transform" />

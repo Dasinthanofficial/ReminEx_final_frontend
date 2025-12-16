@@ -120,7 +120,7 @@ const Plans = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight text-white"
         >
-          Simple, Transparent <br />
+        <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38E07B] to-emerald-400">
             Pricing
           </span>
