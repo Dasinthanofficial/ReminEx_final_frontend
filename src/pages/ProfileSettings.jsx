@@ -12,7 +12,7 @@ import {
   FiXCircle,
   FiAlertTriangle,
 } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // ✅ added useNavigate
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -34,6 +34,7 @@ const getAvatarSrc = (url) => {
 const ProfileSettings = () => {
   const { user, updateUser } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate(); // ✅ initialize navigation
 
   const fileInputRef = useRef(null);
 
@@ -61,6 +62,7 @@ const ProfileSettings = () => {
         updateUser(data.user);
       }
       toast.success("Profile saved successfully");
+      navigate("/"); // ✅ navigate to home page after successful save
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || "Update failed");
@@ -147,7 +149,7 @@ const ProfileSettings = () => {
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-8 md:space-y-10 relative z-10"
           >
-            {/* Avatar */}
+            {/* Avatar Section */}
             <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 pb-8 border-b border-white/10">
               <div className="relative group">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full p-1 bg-gradient-to-tr from-[#38E07B] to-emerald-900">
@@ -187,7 +189,7 @@ const ProfileSettings = () => {
               </div>
             </div>
 
-            {/* Name + Email */}
+            {/* Name + Email Fields */}
             <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-[#38E07B]">
@@ -220,7 +222,7 @@ const ProfileSettings = () => {
               </div>
             </div>
 
-            {/* Subscription */}
+            {/* Subscription Section */}
             <div className="pt-8 border-t border-white/10">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <FiCreditCard className="text-[#38E07B]" /> Subscription Status
@@ -285,7 +287,7 @@ const ProfileSettings = () => {
               </div>
             </div>
 
-            {/* Actions */}
+            {/* Actions Section */}
             <div className="pt-6 flex flex-col-reverse md:flex-row items-center gap-4 border-t border-white/10">
               <button
                 type="button"
@@ -307,55 +309,6 @@ const ProfileSettings = () => {
           </form>
         </motion.div>
       </div>
-
-      {/* Cancel Modal */}
-      <AnimatePresence>
-        {showCancelModal && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowCancelModal(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-[#122017] border border-white/10 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center"
-            >
-              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FiAlertTriangle className="text-3xl text-red-500" />
-              </div>
-
-              <h3 className="text-xl font-bold text-white mb-2">
-                Cancel Subscription?
-              </h3>
-              <p className="text-gray-400 text-sm mb-6">
-                If you cancel now, you will lose Premium access immediately.
-              </p>
-
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setShowCancelModal(false)}
-                  className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-colors border border-white/5"
-                >
-                  No, Keep It
-                </button>
-                <button
-                  onClick={() => cancelMutation.mutate()}
-                  disabled={cancelMutation.isPending}
-                  className="px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors shadow-lg shadow-red-500/20"
-                >
-                  {cancelMutation.isPending ? "Processing..." : "Yes, Cancel"}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
