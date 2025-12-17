@@ -18,7 +18,8 @@ const PrivateRoute = () => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (user?.role === "admin") {
+  // ✅ redirect both admin and superadmin into admin area
+  if (["admin", "superadmin"].includes(user?.role)) {
     return <Navigate to="/admin" replace />;
   }
 

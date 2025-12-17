@@ -8,8 +8,8 @@ export default function SelectMenu({
   onChange,
   options = [],
   className = "",
-  size = "md",          // ✅ NEW: "sm" for tight UI (MonthlyReport), "md" default
-  maxHeight = "max-h-64" // ✅ NEW: dropdown scroll height
+  size = "md",          // "sm" for tight UI, "md" default
+  maxHeight = "max-h-64", // dropdown scroll height
 }) {
   const selected = useMemo(
     () => options.find((o) => o.value === value) || options[0],
@@ -27,7 +27,7 @@ export default function SelectMenu({
       : "px-4 py-3 text-sm";
 
   return (
-    <div className={className}>
+    <div className={`relative z-[60] ${className}`}>
       {label && (
         <label className="block text-xs font-bold text-[#38E07B] uppercase tracking-wider mb-2">
           {label}
@@ -41,7 +41,9 @@ export default function SelectMenu({
               bg-black/40 border border-white/10 text-white outline-none
               focus:border-[#38E07B] focus:ring-1 focus:ring-[#38E07B] transition`}
           >
-            <span className="font-semibold truncate">{selected?.label}</span>
+            <span className="font-semibold truncate">
+              {selected?.label}
+            </span>
             <FiChevronDown className="text-gray-300 shrink-0" />
           </Listbox.Button>
 
@@ -55,9 +57,12 @@ export default function SelectMenu({
             leaveTo="opacity-0 translate-y-1"
           >
             <Listbox.Options
-              className={`absolute z-[9999] mt-2 w-full overflow-hidden rounded-xl
+              className={`
+                absolute mt-2 w-full overflow-hidden rounded-xl
                 border border-white/10 bg-[#122017]/95 backdrop-blur-xl shadow-2xl
-                focus:outline-none`}
+                focus:outline-none
+                z-[70]   /* ensure above card/backdrop */
+              `}
             >
               <div className={`${maxHeight} overflow-y-auto`}>
                 {options.map((opt) => (
@@ -66,7 +71,7 @@ export default function SelectMenu({
                     value={opt.value}
                     className={({ active }) =>
                       `cursor-pointer select-none flex items-center justify-between ${optionClass}
-                      ${active ? "bg-white/10 text-white" : "text-gray-200"}`
+                       ${active ? "bg-white/10 text-white" : "text-gray-200"}`
                     }
                   >
                     {({ selected }) => (

@@ -100,7 +100,7 @@ const EditProduct = () => {
     };
 
     fetchProduct();
-  }, [id, navigate, currency]);
+  }, [id, navigate, currency, convertUSDToLocal]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -212,7 +212,12 @@ const EditProduct = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-white">Loading product details...</div>;
+  if (loading)
+    return (
+      <div className="p-8 text-center text-white">
+        Loading product details...
+      </div>
+    );
 
   const inputStyle =
     "w-full p-3.5 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:border-[#38E07B] focus:ring-1 focus:ring-[#38E07B] outline-none transition-all";
@@ -221,6 +226,11 @@ const EditProduct = () => {
 
   const micBtnOuter =
     "w-12 h-[52px] rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50 flex items-center justify-center";
+
+  const voiceLangOptions = VOICE_LANGS.map((l) => ({
+    value: l.code,
+    label: l.label,
+  }));
 
   return (
     <div className="max-w-4xl mx-auto pb-12">
@@ -234,33 +244,31 @@ const EditProduct = () => {
         <div>
           <h1 className="text-2xl font-bold text-white">Edit Product</h1>
           <p className="text-sm text-gray-400">
-            Update details for <span className="text-[#38E07B]">{product.name}</span>
+            Update details for{" "}
+            <span className="text-[#38E07B]">{product.name}</span>
           </p>
         </div>
       </div>
 
+      {/* Voice language block – higher stacking context */}
       {voiceSupported && (
-        <div className="mb-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
+        <div className="mb-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 relative z-[80]">
           <label className={labelStyle}>Voice Language</label>
-          <select
+          <SelectMenu
             value={voiceLang}
-            onChange={(e) => setVoiceLang(e.target.value)}
-            disabled={listening}
-            className="w-full p-3 bg-black/40 border border-white/10 rounded-xl text-white"
-          >
-            {VOICE_LANGS.map((l) => (
-              <option key={l.code} value={l.code} className="text-black">
-                {l.label}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setVoiceLang(val)}
+            options={voiceLangOptions}
+            size="sm"
+            className="mt-1"
+          />
           <p className="text-[10px] text-gray-500 mt-2">
             Use mic buttons to fill fields. If voice fails, type manually.
           </p>
         </div>
       )}
 
-      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+      {/* Main card – lower stacking index */}
+      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden relative z-[10]">
         <form onSubmit={handleSubmit} className="grid md:grid-cols-3 gap-0">
           {/* Left image */}
           <div className="p-8 border-b md:border-b-0 md:border-r border-white/10 flex flex-col items-center bg-black/20">
@@ -280,7 +288,12 @@ const EditProduct = () => {
 
               <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white font-bold text-sm">
                 Change Image
-                <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFile}
+                  className="hidden"
+                />
               </label>
             </div>
 
@@ -334,8 +347,11 @@ const EditProduct = () => {
                     <div className="flex-1">
                       <SelectMenu
                         value={product.category}
-                        onChange={(val) => setProduct((p) => ({ ...p, category: val }))}
+                        onChange={(val) =>
+                          setProduct((p) => ({ ...p, category: val }))
+                        }
                         options={CATEGORY_OPTIONS}
+                        size="sm"
                       />
                     </div>
                     {voiceSupported && (
@@ -423,9 +439,12 @@ const EditProduct = () => {
                       />
                       <SelectMenu
                         value={product.unit}
-                        onChange={(val) => setProduct((p) => ({ ...p, unit: val }))}
+                        onChange={(val) =>
+                          setProduct((p) => ({ ...p, unit: val }))
+                        }
                         options={UNIT_OPTIONS}
                         className="w-28"
+                        size="sm"
                       />
                     </div>
 

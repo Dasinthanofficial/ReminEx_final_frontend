@@ -331,9 +331,13 @@ const AddProduct = () => {
   const labelStyle =
     "block text-xs font-bold text-[#38E07B] uppercase tracking-wider mb-2";
 
-  // ✅ Mic button style (outside input)
   const micBtnOuter =
     "w-12 h-[52px] rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 disabled:opacity-50 flex items-center justify-center";
+
+  const voiceLangOptions = VOICE_LANGS.map((l) => ({
+    value: l.code,
+    label: l.label,
+  }));
 
   return (
     <div className="max-w-3xl mx-auto p-8 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl my-8">
@@ -346,18 +350,13 @@ const AddProduct = () => {
         {voiceSupported && (
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
             <label className={labelStyle}>Voice Language</label>
-            <select
+            <SelectMenu
               value={voiceLang}
-              onChange={(e) => setVoiceLang(e.target.value)}
-              disabled={listening}
-              className="w-full p-3 bg-black/40 border border-white/10 rounded-xl text-white"
-            >
-              {VOICE_LANGS.map((l) => (
-                <option key={l.code} value={l.code} className="text-black">
-                  {l.label}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setVoiceLang(val)}
+              options={voiceLangOptions}
+              size="sm"
+              className="mt-1"
+            />
             <p className="text-[10px] text-gray-500 mt-2">
               Use mic buttons to fill fields. If voice fails, type manually.
             </p>
@@ -400,7 +399,13 @@ const AddProduct = () => {
 
           {showScanner && (
             <div className="relative mt-4 rounded-xl overflow-hidden border-2 border-[#38E07B] bg-black">
-              <video ref={videoRef} className="w-full h-64 object-cover" autoPlay playsInline muted />
+              <video
+                ref={videoRef}
+                className="w-full h-64 object-cover"
+                autoPlay
+                playsInline
+                muted
+              />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-48 h-48 border-4 border-[#38E07B] rounded-lg animate-pulse" />
               </div>
@@ -460,7 +465,7 @@ const AddProduct = () => {
           </div>
         </div>
 
-        {/* ✅ Expiry (FIXED: mic outside date input so it won't overlap calendar icon) */}
+        {/* Expiry */}
         <div>
           <label className={labelStyle}>Expiry Date</label>
           <div className="flex gap-2 items-stretch">
