@@ -1284,6 +1284,7 @@
 
 // export default AddProduct;
 
+
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -1345,7 +1346,7 @@ const AddProduct = () => {
     image: "",
   });
 
-  // Main product image
+  // Main product image (also used by predict-image)
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [saving, setSaving] = useState(false);
@@ -1355,16 +1356,16 @@ const AddProduct = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [scanning, setScanning] = useState(false);
 
-  // AI predict (produce)
+  // AI predict
   const [predicting, setPredicting] = useState(false);
 
-  // ✅ OCR front/back files
+  // ✅ OCR front/back
   const [frontFile, setFrontFile] = useState(null);
   const [backFile, setBackFile] = useState(null);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrResult, setOcrResult] = useState(null);
 
-  // Input reset keys (so "clear" truly clears the hidden file input)
+  // Reset keys for hidden inputs
   const [frontKey, setFrontKey] = useState(0);
   const [backKey, setBackKey] = useState(0);
 
@@ -1376,7 +1377,7 @@ const AddProduct = () => {
   const videoRef = useRef(null);
   const readerRef = useRef(null);
 
-  // Cleanup blob previews (main product image)
+  // Cleanup blob previews
   useEffect(() => {
     return () => {
       if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
@@ -1558,18 +1559,23 @@ const AddProduct = () => {
 
       toast.success("✓ Auto-filled! Add expiry date & price.", { icon: "📦" });
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to auto-fill");
+      toast.error(err?.response?.data?.message || "Failed to auto-fill");
     } finally {
       setScanning(false);
     }
   };
 
-  // ✅ OCR using backend Tesseract
+  // ✅ OCR using backend Tesseract (toast improved)
   const handleOCR = async () => {
+    if (ocrLoading) return;
+
     if (!frontFile && !backFile) {
-      toast.error("Upload front and/or back image first.");
+      toast.error("Please select front and/or back image first.");
       return;
     }
+
+    const toastId = "ocr";
+    toast.loading("OCR: reading text…", { id: toastId });
 
     const fd = new FormData();
     if (frontFile) fd.append("front", frontFile);
@@ -1582,7 +1588,7 @@ const AddProduct = () => {
       const res = await api.post("/products/ocr", fd);
 
       if (!res?.success) {
-        toast.error("OCR failed. Please fill manually.");
+        toast.error("OCR failed. Please try again.", { id: toastId });
         return;
       }
 
@@ -1611,15 +1617,23 @@ const AddProduct = () => {
         setForm((p) => ({ ...p, image: "" }));
       }
 
-      toast.success("OCR completed! Please review and save.");
+      toast.success("OCR completed! Please review and save.", { id: toastId });
     } catch (err) {
-      toast.error(err?.response?.data?.message || "OCR error");
+      const serverMsg = err?.response?.data?.message;
+      const isNetwork = !err?.response; // connection refused / CORS / backend down
+
+      const msg = serverMsg
+        ? serverMsg
+        : isNetwork
+        ? "Cannot connect to server. Start backend / check VITE_API_URL."
+        : err?.message || "OCR error";
+
+      toast.error(msg, { id: toastId });
     } finally {
       setOcrLoading(false);
     }
   };
 
-  // AI expiry prediction (produce only)
   const handlePredictFromImage = async () => {
     if (!file) return toast.error("Upload or capture a produce image first");
 
@@ -1644,7 +1658,7 @@ const AddProduct = () => {
         { duration: 3500 }
       );
     } catch (err) {
-      if (err.response?.status === 429) toast.error("AI service busy. Try again.");
+      if (err?.response?.status === 429) toast.error("AI service busy. Try again.");
       else toast.error("Image analysis unavailable. Set expiry manually.");
     } finally {
       setPredicting(false);
@@ -1679,15 +1693,16 @@ const AddProduct = () => {
       toast.success("Product added!");
       navigate("/products");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to add product");
+      toast.error(err?.response?.data?.message || "Failed to add product");
     } finally {
       setSaving(false);
     }
   };
 
-  // ✅ Custom styled picker for OCR files
+  // ✅ Styled OCR file picker (matches dark UI)
   const OCRFilePicker = ({ label, fileValue, onPick, onClear, inputKey }) => {
     const inputId = `ocr-${label.toLowerCase()}-${inputKey}`;
+
     return (
       <div>
         <p className="text-[11px] text-gray-400 mb-2 font-bold uppercase tracking-widest">
@@ -1758,7 +1773,7 @@ const AddProduct = () => {
           </div>
         )}
 
-        {/* ✅ OCR Front/Back (styled inputs) */}
+        {/* OCR Front/Back */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
           <label className={labelStyle}>OCR (Front / Back)</label>
 
