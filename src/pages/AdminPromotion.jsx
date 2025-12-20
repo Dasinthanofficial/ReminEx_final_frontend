@@ -18,9 +18,7 @@ const AdminPromotion = () => {
     fd.append("image", file);
 
     // NOTE: your axios interceptor returns response.data already
-    const res = await api.post("/admin/upload-image", fd, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const res =await api.post("/admin/upload-image", fd);
 
     if (!res?.url) throw new Error("Upload failed: no URL returned");
     return res.url;

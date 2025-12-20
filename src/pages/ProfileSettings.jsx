@@ -51,9 +51,7 @@ const ProfileSettings = () => {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (formData) => {
-      const res = await api.put("/user/profile", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await api.put("/user/profile", formData);
       return res;
     },
     onSuccess: (data) => {
