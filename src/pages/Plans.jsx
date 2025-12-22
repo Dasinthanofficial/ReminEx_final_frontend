@@ -2,15 +2,17 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { FiCheck, FiX, FiGlobe, FiStar } from "react-icons/fi";
+import toast from "react-hot-toast";
+import { motion } from "framer-motion";
+
 import { paymentService } from "../services/paymentService";
 import { useAuth } from "../context/AuthContext";
 import { formatPrice, getCurrencyList } from "../utils/currencyHelper";
-import toast from "react-hot-toast";
-import { motion } from "framer-motion";
 
 const Plans = () => {
   const { user, isAuthenticated, currency, changeCurrency } = useAuth();
   const navigate = useNavigate();
+
   const [currencyList, setCurrencyList] = useState(["USD"]);
   const [loadingPlan, setLoadingPlan] = useState(null);
 
@@ -31,8 +33,19 @@ const Plans = () => {
       return;
     }
 
+    if (!planId) {
+      toast.error("Missing plan id");
+      return;
+    }
+
+    // If already on that plan
+    if (user?.plan === planName) {
+      toast.info("You are already on this plan");
+      return;
+    }
+
     if (planName === "Free") {
-      toast.info("You are already on the free plan");
+      toast.info("Free plan does not require payment.");
       return;
     }
 
@@ -48,9 +61,11 @@ const Plans = () => {
 
       toast.error("Stripe did not return a checkout URL.");
     } catch (error) {
+      console.log("Checkout error:", error?.response?.status, error?.response?.data);
+
       const msg =
-        error.response?.data?.message ||
-        error.message ||
+        error?.response?.data?.message ||
+        error?.message ||
         "Failed to create checkout session";
       toast.error(msg);
     } finally {
@@ -120,7 +135,7 @@ const Plans = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight text-white"
         >
-        <br />
+          <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38E07B] to-emerald-400">
             Pricing
           </span>
@@ -132,7 +147,8 @@ const Plans = () => {
           transition={{ delay: 0.2 }}
           className="text-xl text-gray-400 leading-relaxed"
         >
-          Choose the perfect plan for your kitchen. <br className="hidden md:block" />
+          Choose the perfect plan for your kitchen.
+          <br className="hidden md:block" />
           No hidden fees. Cancel anytime.
         </motion.p>
       </div>
@@ -167,11 +183,14 @@ const Plans = () => {
                 </h3>
 
                 <div className="flex items-baseline gap-1">
-                  <span className={`text-5xl font-black tracking-tighter ${isPro ? "text-white" : "text-gray-200"}`}>
+                  <span
+                    className={`text-5xl font-black tracking-tighter ${
+                      isPro ? "text-white" : "text-gray-200"
+                    }`}
+                  >
                     {plan.name === "Free" ? "Free" : formatPrice(plan.price, currency)}
                   </span>
 
-                  {/* ✅ Only show /month or /year for paid plans */}
                   {plan.name !== "Free" && (
                     <span className="text-gray-500 font-medium">
                       /{plan.name === "Yearly" ? "year" : "month"}
@@ -200,7 +219,9 @@ const Plans = () => {
                     </div>
                     <span
                       className={`text-sm ${
-                        feature.included ? "text-gray-200" : "text-gray-500 line-through decoration-white/10"
+                        feature.included
+                          ? "text-gray-200"
+                          : "text-gray-500 line-through decoration-white/10"
                       }`}
                     >
                       {feature.text}
@@ -231,7 +252,8 @@ const Plans = () => {
 
               {!isCurrentPlan && plan.name !== "Free" && (
                 <p className="text-[10px] text-center mt-2 text-gray-400">
-                  Then {formatPrice(plan.price, currency)}/{plan.name === "Yearly" ? "yr" : "mo"}
+                  Then {formatPrice(plan.price, currency)}/
+                  {plan.name === "Yearly" ? "yr" : "mo"}
                 </p>
               )}
             </motion.div>
