@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FiTrash2,
   FiSearch,
-  FiChevronDown,
   FiAlertTriangle,
   FiCalendar,
   FiCreditCard,
@@ -14,6 +13,13 @@ import toast from "react-hot-toast";
 import { format } from "date-fns";
 import { useAuth } from "../context/AuthContext";
 import AdminPageShell from "../components/AdminPageShell";
+import SelectMenu from "../components/SelectMenu";
+
+const ROLE_OPTIONS = [
+  { value: "user", label: "User" },
+  { value: "admin", label: "Admin" },
+  { value: "superadmin", label: "Super" },
+];
 
 const getRoleStyles = (role) => {
   switch (role) {
@@ -129,7 +135,7 @@ const AdminUsers = () => {
           </div>
         </div>
 
-        {/* Mobile cards */}
+        {/* 📱 MOBILE VIEW: Cards */}
         <div className="md:hidden space-y-4">
           {filteredUsers.map((u) => {
             const isSelf = currentUser && currentUser.email === u.email;
@@ -139,8 +145,10 @@ const AdminUsers = () => {
             return (
               <div
                 key={u._id}
-                className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-lg relative overflow-hidden min-w-0"
+                // ✅ DO NOT use overflow-hidden here; it clips dropdowns
+                className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-lg relative min-w-0"
               >
+                {/* Top row */}
                 <div className="flex justify-between items-start mb-4 gap-3 min-w-0">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#38E07B] to-emerald-900 p-[2px] flex-shrink-0">
@@ -169,35 +177,39 @@ const AdminUsers = () => {
                   )}
                 </div>
 
+                {/* Middle row */}
                 <div className="grid grid-cols-2 gap-2 mb-3 min-w-0">
+                  {/* Role */}
                   <div className="bg-black/20 rounded-lg p-2 border border-white/5 min-w-0">
                     <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
                       <FiShield className="text-[#38E07B]" /> Role
                     </div>
 
                     {isSuperAdmin ? (
-                      <div className={`relative w-full rounded-md border ${bg} ${text} ${border}`}>
-                        <select
+                      <div
+                        className={`w-full rounded-md border ${bg} ${text} ${border} p-1 relative z-[9999]`}
+                      >
+                        <SelectMenu
                           value={u.role}
-                          disabled={isSelf}
-                          onChange={(e) =>
-                            roleMutation.mutate({ id: u._id, role: e.target.value })
+                          onChange={(val) =>
+                            roleMutation.mutate({ id: u._id, role: val })
                           }
-                          className="w-full bg-transparent p-1 pl-2 text-[10px] font-bold uppercase tracking-wide appearance-none outline-none text-current"
-                        >
-                          <option value="user" className="bg-[#122017] text-white">User</option>
-                          <option value="admin" className="bg-[#122017] text-white">Admin</option>
-                          <option value="superadmin" className="bg-[#122017] text-white">Super</option>
-                        </select>
-                        <FiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none" />
+                          options={ROLE_OPTIONS}
+                          size="sm"
+                          maxHeight="max-h-40"
+                          className={isSelf ? "opacity-70 pointer-events-none" : ""}
+                        />
                       </div>
                     ) : (
-                      <span className={`block w-full text-center px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded-md border ${bg} ${text} ${border}`}>
+                      <span
+                        className={`block w-full text-center px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded-md border ${bg} ${text} ${border}`}
+                      >
                         {u.role}
                       </span>
                     )}
                   </div>
 
+                  {/* Plan */}
                   <div className="bg-black/20 rounded-lg p-2 border border-white/5 min-w-0">
                     <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
                       <FiCreditCard className="text-blue-400" /> Plan
@@ -214,6 +226,7 @@ const AdminUsers = () => {
                   </div>
                 </div>
 
+                {/* Bottom row */}
                 <div className="flex items-center gap-2 text-[10px] text-gray-500 border-t border-white/5 pt-2">
                   <FiCalendar />
                   Joined {format(new Date(u.createdAt), "MMM dd, yyyy")}
@@ -223,9 +236,13 @@ const AdminUsers = () => {
           })}
         </div>
 
-        {/* Desktop table */}
-        <div className="hidden md:block bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-lg">
-          <div className="overflow-x-auto">
+        {/* 💻 DESKTOP VIEW: Table */}
+        <div
+          // ✅ IMPORTANT: remove overflow-hidden so dropdown can render outside
+          className="hidden md:block bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-lg relative"
+        >
+          {/* ✅ allow Y overflow for dropdown; keep X scrolling */}
+          <div className="overflow-x-auto overflow-y-visible">
             <table className="w-full text-left min-w-[700px]">
               <thead className="bg-white/5 text-gray-400 uppercase text-[10px] font-bold tracking-wider">
                 <tr>
@@ -245,6 +262,7 @@ const AdminUsers = () => {
 
                   return (
                     <tr key={u._id} className="hover:bg-white/[0.02] transition">
+                      {/* User */}
                       <td className="px-6 py-4">
                         <div className="flex items-center min-w-0">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#38E07B] to-emerald-900 p-[2px] shrink-0">
@@ -253,38 +271,46 @@ const AdminUsers = () => {
                             </div>
                           </div>
                           <div className="ml-3 min-w-0">
-                            <div className="font-bold text-white text-sm truncate">{u.name}</div>
-                            <div className="text-xs text-gray-500 truncate">{u.email}</div>
+                            <div className="font-bold text-white text-sm truncate">
+                              {u.name}
+                            </div>
+                            <div className="text-xs text-gray-500 truncate">
+                              {u.email}
+                            </div>
                           </div>
                         </div>
                       </td>
 
+                      {/* Role */}
                       <td className="px-6 py-4">
                         {isSuperAdmin ? (
-                          <div className={`inline-flex items-center relative rounded-lg border ${bg} ${text} ${border} px-2 pr-6 py-1 text-[10px] font-bold uppercase tracking-wide`}>
-                            <select
-                              value={u.role}
-                              disabled={isSelf}
-                              onChange={(e) =>
-                                roleMutation.mutate({ id: u._id, role: e.target.value })
-                              }
-                              className={`appearance-none bg-transparent border-none outline-none text-current text-[10px] font-bold uppercase tracking-wide pr-4 ${
-                                isSelf ? "cursor-not-allowed opacity-70" : "cursor-pointer"
-                              }`}
-                            >
-                              <option value="user" className="bg-[#122017] text-white">User</option>
-                              <option value="admin" className="bg-[#122017] text-white">Admin</option>
-                              <option value="superadmin" className="bg-[#122017] text-white">Superadmin</option>
-                            </select>
-                            <FiChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[11px] pointer-events-none" />
+                          <div
+                            // ✅ high z-index so it goes above table stuff
+                            className={`inline-block rounded-lg border ${bg} ${text} ${border} p-1 relative z-[9999]`}
+                          >
+                            <div className="w-44">
+                              <SelectMenu
+                                value={u.role}
+                                onChange={(val) =>
+                                  roleMutation.mutate({ id: u._id, role: val })
+                                }
+                                options={ROLE_OPTIONS}
+                                size="sm"
+                                maxHeight="max-h-56"
+                                className={isSelf ? "opacity-70 pointer-events-none" : ""}
+                              />
+                            </div>
                           </div>
                         ) : (
-                          <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded-lg border ${bg} ${text} ${border}`}>
+                          <span
+                            className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded-lg border ${bg} ${text} ${border}`}
+                          >
                             {u.role}
                           </span>
                         )}
                       </td>
 
+                      {/* Plan */}
                       <td className="px-6 py-4">
                         <span
                           className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded-lg border ${
@@ -297,10 +323,12 @@ const AdminUsers = () => {
                         </span>
                       </td>
 
+                      {/* Joined */}
                       <td className="px-6 py-4 text-xs text-gray-400 font-mono">
                         {format(new Date(u.createdAt), "MMM dd, yyyy")}
                       </td>
 
+                      {/* Actions */}
                       <td className="px-6 py-4 text-right">
                         {u.role === "user" && (
                           <button
@@ -340,7 +368,9 @@ const AdminUsers = () => {
 
               <p className="text-gray-400 mb-6 text-sm break-words">
                 Are you sure you want to remove{" "}
-                <span className="text-white font-semibold">{userToDelete?.name}</span>{" "}
+                <span className="text-white font-semibold">
+                  {userToDelete?.name}
+                </span>{" "}
                 (<span className="text-gray-300">{userToDelete?.email}</span>)?
                 This action cannot be undone.
               </p>
