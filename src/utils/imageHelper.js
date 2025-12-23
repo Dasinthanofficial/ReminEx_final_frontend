@@ -12,4 +12,4 @@ export const getImageUrl = (url) => {
   const baseUrl = apiUrl.replace(/\/api$/, "");
 
   return `${baseUrl}${url.startsWith("/") ? url : `/${url}`}`;
-};
+}; 

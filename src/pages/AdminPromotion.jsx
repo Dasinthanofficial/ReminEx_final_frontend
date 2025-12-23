@@ -5,6 +5,7 @@ import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import toast from "react-hot-toast";
 import api from "../services/api";
+import AdminPageShell from "../components/AdminPageShell";
 
 const AdminPromotion = () => {
   const quillRef = useRef(null);
@@ -17,9 +18,7 @@ const AdminPromotion = () => {
     const fd = new FormData();
     fd.append("image", file);
 
-    // NOTE: your axios interceptor returns response.data already
-    const res =await api.post("/admin/upload-image", fd);
-
+    const res = await api.post("/admin/upload-image", fd);
     if (!res?.url) throw new Error("Upload failed: no URL returned");
     return res.url;
   }, []);
@@ -68,7 +67,7 @@ const AdminPromotion = () => {
           [{ header: [1, 2, 3, false] }],
           ["bold", "italic", "underline", "strike"],
           [{ color: [] }, { background: [] }],
-          [{ list: "ordered" }, { list: "bullet" }],
+          [{ list: "ordered" }, { list: "bullet" }], // ✅ toolbar uses bullet value
           [{ align: [] }],
           ["link", "image"],
           ["clean"],
@@ -79,6 +78,7 @@ const AdminPromotion = () => {
     [imageHandler]
   );
 
+  // ✅ IMPORTANT: "bullet" is NOT a format. Use "list" only.
   const formats = [
     "header",
     "bold",
@@ -87,8 +87,7 @@ const AdminPromotion = () => {
     "strike",
     "color",
     "background",
-    "list",
-    "bullet",
+    "list",     // ✅ keep list
     "align",
     "link",
     "image",
@@ -103,7 +102,7 @@ const AdminPromotion = () => {
       setTargetAudience("all");
     },
     onError: (err) => {
-      toast.error(err.response?.data?.message || "Failed to send emails.");
+      toast.error(err?.response?.data?.message || "Failed to send emails.");
     },
   });
 
@@ -112,13 +111,9 @@ const AdminPromotion = () => {
 
     if (!subject.trim()) return toast.error("Subject required");
 
-    // basic empty check: remove tags, allow image-only emails too
     const plain = message.replace(/<(.|\n)*?>/g, "").trim();
     const hasImage = /<img\s/i.test(message);
-
-    if (!plain && !hasImage) {
-      return toast.error("Please write a message body");
-    }
+    if (!plain && !hasImage) return toast.error("Please write a message body");
 
     const confirmMsg =
       targetAudience === "all"
@@ -131,85 +126,113 @@ const AdminPromotion = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto pb-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white tracking-tight">
-          Email Campaign
-        </h1>
-        <p className="text-gray-400 mt-1 text-sm">
-          Send formatted newsletters (images upload to Cloudinary).
-        </p>
-      </div>
+    <AdminPageShell>
+      <div className="w-full min-w-0 pb-10">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+            Email Campaign
+          </h1>
+          <p className="text-gray-400 mt-1 text-sm">
+            Send formatted newsletters (images upload to Cloudinary).
+          </p>
+        </div>
 
-      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-lg">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Audience */}
-          <div>
-            <label className="block text-xs font-bold text-[#38E07B] uppercase mb-2 flex items-center gap-2">
-              <FiUsers /> Target Audience
-            </label>
-            <select
-              value={targetAudience}
-              onChange={(e) => setTargetAudience(e.target.value)}
-              className="w-full p-4 bg-black/40 border border-white/10 rounded-xl text-white focus:border-[#38E07B] outline-none transition-all font-bold"
-            >
-              <option value="all">All Users</option>
-              <option value="free">Free Users</option>
-              <option value="premium">Premium Users</option>
-            </select>
-          </div>
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-lg min-w-0 overflow-hidden">
+          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 min-w-0">
+            {/* Audience */}
+            <div>
+              <label className="block text-xs font-bold text-[#38E07B] uppercase mb-2 flex items-center gap-2">
+                <FiUsers /> Target Audience
+              </label>
 
-          {/* Subject */}
-          <div>
-            <label className="block text-xs font-bold text-[#38E07B] uppercase mb-2 flex items-center gap-2">
-              <FiType /> Subject Line
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Big Updates Coming!"
-              className="w-full p-4 bg-black/40 border border-white/10 rounded-xl text-white focus:border-[#38E07B] outline-none transition-all font-bold text-lg"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-            />
-          </div>
+              <div className="relative">
+                <select
+                  value={targetAudience}
+                  onChange={(e) => setTargetAudience(e.target.value)}
+                  className="w-full p-3 md:p-4 bg-black/40 border border-white/10 rounded-xl text-white focus:border-[#38E07B] outline-none transition-all font-bold appearance-none"
+                >
+                  <option value="all">All Users</option>
+                  <option value="free">Free Users</option>
+                  <option value="premium">Premium Users</option>
+                </select>
 
-          {/* Editor */}
-          <div>
-            <label className="block text-xs font-bold text-[#38E07B] uppercase mb-2">
-              Compose Email
-            </label>
+                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-400">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                    <path
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
 
-            <div className="bg-white rounded-xl overflow-hidden text-black">
-              <ReactQuill
-                ref={quillRef}
-                theme="snow"
-                value={message}
-                onChange={setMessage}
-                modules={modules}
-                formats={formats}
-                className="h-80 mb-12"
-                placeholder="Write something amazing... Use the image button to upload."
+            {/* Subject */}
+            <div>
+              <label className="block text-xs font-bold text-[#38E07B] uppercase mb-2 flex items-center gap-2">
+                <FiType /> Subject Line
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Big Updates Coming!"
+                className="w-full p-3 md:p-4 bg-black/40 border border-white/10 rounded-xl text-white focus:border-[#38E07B] outline-none transition-all font-bold text-base md:text-lg"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
               />
             </div>
-          </div>
 
-          {/* Send */}
-          <div className="pt-4 border-t border-white/10 flex justify-end">
-            <button
-              type="submit"
-              disabled={mutation.isPending}
-              className="bg-[#38E07B] text-[#122017] px-8 py-3 rounded-xl font-bold hover:bg-[#2fc468] transition flex items-center gap-2 disabled:opacity-50"
-            >
-              {mutation.isPending ? "Sending..." : (
-                <>
-                  <FiSend /> Send Blast
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+            {/* Editor */}
+            <div className="min-w-0">
+              <label className="block text-xs font-bold text-[#38E07B] uppercase mb-2">
+                Compose Email
+              </label>
+
+              <div
+                className="
+                  bg-white rounded-xl overflow-hidden text-black min-w-0
+                  [&_.ql-toolbar]:border-b-gray-200
+                  [&_.ql-toolbar]:flex
+                  [&_.ql-toolbar]:flex-wrap
+                  [&_.ql-toolbar_.ql-formats]:mr-2
+                  [&_.ql-toolbar_.ql-formats]:mb-2
+                  [&_.ql-container]:text-base
+                  [&_.ql-editor]:min-h-[200px]
+                "
+              >
+                <ReactQuill
+                  ref={quillRef}
+                  theme="snow"
+                  value={message}
+                  onChange={setMessage}
+                  modules={modules}
+                  formats={formats}
+                  className="h-56 md:h-80 mb-12 md:mb-10"
+                  placeholder="Write something amazing..."
+                />
+              </div>
+            </div>
+
+            {/* Send */}
+            <div className="pt-4 border-t border-white/10 flex flex-col md:flex-row justify-end">
+              <button
+                type="submit"
+                disabled={mutation.isPending}
+                className="w-full md:w-auto bg-[#38E07B] text-[#122017] px-8 py-3 rounded-xl font-bold hover:bg-[#2fc468] transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_0_20px_rgba(56,224,123,0.2)]"
+              >
+                {mutation.isPending ? (
+                  "Sending..."
+                ) : (
+                  <>
+                    <FiSend /> Send Blast
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </AdminPageShell>
   );
 };
 
